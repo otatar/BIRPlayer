@@ -40,7 +40,7 @@ public class RadioStationDatabaseHelper extends SQLiteOpenHelper {
         values.put(RadioStationTable.Cols.STATION_GENRE,"Various");
         values.put(RadioStationTable.Cols.STATION_URL,"wwww.radioba.ba");
         values.put(RadioStationTable.Cols.STATION_LOCATION,"Sarajevo");
-        values.put(RadioStationTable.Cols.LISTEN_URL,"http://streaming.radioba.ba:1002/radio_Ba");
+        values.put(RadioStationTable.Cols.LISTEN_URL,"http://streaming.radioba.ba:10002/radio_Ba");
         values.put(RadioStationTable.Cols.LISTEN_TYPE,1);
 
         // Insert into database
@@ -53,7 +53,7 @@ public class RadioStationDatabaseHelper extends SQLiteOpenHelper {
         values.put(RadioStationTable.Cols.STATION_GENRE,"pop, zabavna");
         values.put(RadioStationTable.Cols.STATION_URL,"wwww.rsg.ba");
         values.put(RadioStationTable.Cols.STATION_LOCATION,"Sarajevo");
-        values.put(RadioStationTable.Cols.LISTEN_URL," http://195.222.57.33:8090/listen.pls");
+        values.put(RadioStationTable.Cols.LISTEN_URL,"http://195.222.57.33:8090/");
         values.put(RadioStationTable.Cols.LISTEN_TYPE,0);
 
         // Insert into database

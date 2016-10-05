@@ -103,6 +103,8 @@ public class RadioPlayerService extends Service {
         @Override
         public void handleMessage(Message msg) {
 
+            Log.d(LOG_TAG, "Received message: " + msg.what);
+
             if (msg.what == RadioPlayerFragment.REGISTER) {
                 fragmentMessenger = msg.replyTo;
 
@@ -153,6 +155,9 @@ public class RadioPlayerService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         if (intent != null) {
+
+            Log.d(LOG_TAG, "Received intent: " + intent.getAction());
+
             if (intent.getAction().equals(RadioPlayerService.START_SERVICE)) {
 
                 Log.d(LOG_TAG, "Starting service...");
@@ -215,6 +220,7 @@ public class RadioPlayerService extends Service {
             public boolean onError(MediaPlayer mp, int what, int extra) {
 
                 if(what == mediaPlayer.MEDIA_ERROR_UNKNOWN) {
+                    Log.d(LOG_TAG, radioStation.getListenUrl());
                     setMPState(RadioPlayerService.MP_ERROR);
                     sendStatus();
                 } else if(what == mediaPlayer.MEDIA_ERROR_SERVER_DIED) {
@@ -264,15 +270,19 @@ public class RadioPlayerService extends Service {
      */
     protected void initMediaPlayer(String mediaURL) {
 
+        Log.i(LOG_TAG, "initMediaPlayer");
+
         // Skip initialization if media player is paused or is playing
         if (mpState == RadioPlayerService.MP_PAUSED || mpState == RadioPlayerService.MP_PLAYING) {
             return;
         }
 
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        Log.d(LOG_TAG, "Setting data source: " + mediaURL);
         try {
             mediaPlayer.setDataSource(mediaURL);
         } catch (Exception e) {
+            Log.d(LOG_TAG, radioStation.getListenUrl() + e.toString());
             setMPState(RadioPlayerService.MP_ERROR);
             sendStatus();
         }
@@ -286,6 +296,8 @@ public class RadioPlayerService extends Service {
      * Prepare asynchronously media player
      */
     protected void startMediaPlayer() {
+
+        Log.i(LOG_TAG, "startMediaPlayer");
 
         // If media player is pause or playing, just play
         if (mpState == RadioPlayerService.MP_PAUSED || mpState == RadioPlayerService.MP_PLAYING) {
@@ -314,6 +326,8 @@ public class RadioPlayerService extends Service {
      */
     protected void pauseMediaPlayer() {
 
+        Log.i(LOG_TAG, "pauseMediaPlayer");
+
         if (mpState == RadioPlayerService.MP_PLAYING) {
             mediaPlayer.pause();
             setMPState(RadioPlayerService.MP_PAUSED);
@@ -328,13 +342,22 @@ public class RadioPlayerService extends Service {
      */
     protected void stopMediaPlayer() {
 
+        Log.i(LOG_TAG, "stopMediaPlayer");
+
         if ((mpState == RadioPlayerService.MP_PAUSED) || (mpState == RadioPlayerService.MP_PLAYING)) {
             mediaPlayer.stop();
+            mediaPlayer.reset();
             setMPState(RadioPlayerService.MP_STOPPED);
             sendStatus();
 
             // Return service from foreground (maybe device needs resources)
             serviceStopForeground();
+
+        } else {
+             //If media player is in other state, reset it
+            mediaPlayer.reset();
+            setMPState(RadioPlayerService.MP_NOT_READY);
+            sendStatus();
         }
     }
 

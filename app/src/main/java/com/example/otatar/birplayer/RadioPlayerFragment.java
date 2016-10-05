@@ -266,7 +266,7 @@ public class RadioPlayerFragment extends Fragment {
      */
     private void sendAction(String action) {
 
-        if (action == RadioPlayerFragment.ACTION_INIT) {
+        if (action.equals(RadioPlayerFragment.ACTION_INIT)) {
             try {
                 Message msg = Message.obtain(null, RadioPlayerFragment.SEND_ACTION);
                 Bundle bundle = new Bundle();

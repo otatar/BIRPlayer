@@ -91,14 +91,17 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
 
-                /* When page changes stop media player if it is playing */
-                Intent stopIntent = new Intent(MainActivity.this, RadioPlayerService.class);
-                stopIntent.setAction(RadioPlayerFragment.ACTION_STOP);
-                startService(stopIntent);
             }
 
             @Override
             public void onPageSelected(int position) {
+
+                Log.i("Main", "onPageSelected");
+
+                /* When page changes stop media player if it is playing */
+                Intent stopIntent = new Intent(MainActivity.this, RadioPlayerService.class);
+                stopIntent.setAction(RadioPlayerFragment.ACTION_STOP);
+                startService(stopIntent);
 
             }
 
