@@ -8,15 +8,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.wifi.WifiManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.PowerManager;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.widget.Toast;
 
 
 /**
@@ -48,6 +51,16 @@ public class RadioPlayerService extends Service {
      */
     private RadioStation radioStation;
 
+    /**
+     * Reference to WiFi lock
+     */
+    private WifiManager.WifiLock wiFiLock;
+
+    /**
+     * Reference to audio manager
+     */
+    private AudioManager audioManager;
+
     /*
     * MediaPlayer Object
     */
@@ -55,8 +68,15 @@ public class RadioPlayerService extends Service {
 
 
     public final IBinder binder = new RadioPlayerBinder();
-    public String mediaURL;
-    public static final String LOG_TAG = "RadioPlayerService";
+
+    /**
+     * LOG_TAG string
+     */
+    public static final String LOG_TAG = "RadioPlayerServiceLog";
+
+    /**
+     * ID used from notification service
+     */
     public static final int NOTIFICATION_ID = 333;
 
     private Messenger fragmentMessenger = null;
@@ -68,7 +88,7 @@ public class RadioPlayerService extends Service {
     private static final String START_SERVICE = "com.example.otatar.birplayer.radioplayerservice.start_service";
 
     /**
-     * Constant to track media player state
+     * Constants to track media player state
      */
     public static final String MP_PLAYING = "com.example.otatar.birplayer.radioplayerservice.playing";
     public static final String MP_CONNECTING = "com.example.otatar.birplayer.radioplayerservice.connecting";
@@ -81,14 +101,16 @@ public class RadioPlayerService extends Service {
     public static final String MP_INIT = "com.example.otatar.birplayer.radioplayerservice.init";
 
     /**
-     * Variables to track MediaPlayer state
+     * Variable to track MediaPlayer state
      */
     private String mpState = this.MP_NOT_READY;
 
 
+    //Constructor
     public RadioPlayerService() {
 
         this.mediaPlayer = new MediaPlayer();
+
     }
 
 
@@ -98,6 +120,9 @@ public class RadioPlayerService extends Service {
         }
     }
 
+    /**
+     * Handler for receiving messages from RadioPlayer fragment
+     */
     class IncomingHandler extends Handler {
 
         @Override
@@ -211,6 +236,49 @@ public class RadioPlayerService extends Service {
 
         Log.d(LOG_TAG, "Service created");
 
+        //Acquire wake lock (we want to ensure that CPU is running when we play media)
+        mediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
+
+        //Create WiFi lock
+        wiFiLock =  ((WifiManager) getSystemService(Context.WIFI_SERVICE))
+                .createWifiLock(WifiManager.WIFI_MODE_FULL, "mylock");
+
+        // Get audio manager
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
+        // Callback on audio focus change
+        final AudioManager.OnAudioFocusChangeListener audioFocusChangeListener =
+                new AudioManager.OnAudioFocusChangeListener() {
+
+                    @Override
+                    public void onAudioFocusChange(int focusChange) {
+
+                        switch (focusChange) {
+
+                            case AudioManager.AUDIOFOCUS_GAIN:
+                                // resume volume
+                                Log.i(LOG_TAG, "Audio focus gain");
+                                mediaPlayer.setVolume(1.0f, 1.0f);
+                                break;
+
+                            case AudioManager.AUDIOFOCUS_LOSS:
+                                // Lost focus for an unbounded amount of time: stop playback and release media player
+                                Log.i(LOG_TAG, "Lost focus for unbounded amount of time");
+                                mediaPlayer.stop();
+                                mediaPlayer.reset();
+                                setMPState(RadioPlayerService.MP_STOPPED);
+                                sendStatus();
+                                break;
+
+                            default:
+                                // Lost focus for a short time, duck volume
+                                Log.i(LOG_TAG, "Lost focus a short time");
+                                mediaPlayer.setVolume(0.0f, 0.0f);
+                        }
+
+                    }
+                };
+
         // We want to stream music from internet
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 
@@ -238,13 +306,36 @@ public class RadioPlayerService extends Service {
 
                 // We are ready
                 setMPState(RadioPlayerService.MP_READY);
-                //Go in foreground
 
-                // Play!!!
+                //Request audio focus
+                int result = audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC,
+                        AudioManager.AUDIOFOCUS_GAIN);
+
+                if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                    Log.w(LOG_TAG, "Could not get audio focus");
+
+                    //Inform user about that
+                    Toast.makeText(getApplicationContext(), R.string.no_audio_focus, Toast.LENGTH_SHORT).show();
+
+                    //Reset media player and return
+                    mediaPlayer.reset();
+                    setMPState(RadioPlayerService.MP_NOT_READY);
+                    sendStatus();
+
+                }
+
+                //Go in foreground
                 if (!isForeground) {
                     serviceStartForeground();
                 }
+
+                // Play!!!
                 mediaPlayer.start();
+
+                /* If we are connected over WiFi, acquire a WiFi lock */
+                if (NetworkUtil.checkNetworkConnection(getApplicationContext()) == NetworkUtil.TYPE_WIFI) {
+                    wiFiLock.acquire();
+                }
                 setMPState(RadioPlayerService.MP_PLAYING);
                 sendStatus();
 
@@ -264,7 +355,7 @@ public class RadioPlayerService extends Service {
     }
 
     /**
-     * Initialize media player
+     * Initialize media player.
      *
      * @param mediaURL
      */
@@ -290,7 +381,6 @@ public class RadioPlayerService extends Service {
         setMPState(RadioPlayerService.MP_INIT);
         sendStatus();
     }
-
 
     /**
      * Prepare asynchronously media player
@@ -320,7 +410,6 @@ public class RadioPlayerService extends Service {
 
     }
 
-
     /**
      * Pause media player
      */
@@ -335,7 +424,6 @@ public class RadioPlayerService extends Service {
         }
 
     }
-
 
     /**
      * Stop media player
@@ -359,6 +447,12 @@ public class RadioPlayerService extends Service {
             setMPState(RadioPlayerService.MP_NOT_READY);
             sendStatus();
         }
+
+        //Release WiFi lock
+        if(wiFiLock.isHeld()) {
+            wiFiLock.release();
+        }
+
     }
 
     /**
@@ -389,13 +483,13 @@ public class RadioPlayerService extends Service {
     }
 
     /**
-     * Moves Radio Player Service in foreground
+     * Moves Radio Player Service in foreground and sets notifications
      */
     private void serviceStartForeground() {
 
         //Pending intent
         PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0,
-                new Intent(getApplicationContext(), MainActivity.class),
+                new Intent(getApplicationContext(), NowPlayingActivity.class),
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
         // Intents for action keys

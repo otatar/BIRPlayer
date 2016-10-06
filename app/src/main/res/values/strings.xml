@@ -6,4 +6,13 @@
     <string name="button_play">Play</string>
     <string name="button_stop">Stop</string>
     <string name="button_pause">Pause</string>
+
+    <string name="vifi_connection">WiFi connection</string>
+    <string name="mobile_connection">Mobile connection</string>
+    <string name="no_connection">Niste povezani na internet. Nećete biti u mogućnosti da slušate radio stanice!!</string>
+    <string name="mobile_connection_hint">Na internet ste povezani preko mobilne mreže. Postoji mogućnost da Vaš
+    mobilni operator naplati troškove prenosa podataka!</string>
+    <string name="ok">Uredu</string>
+    <string name="no_audio_focus">Audio sistem zauzet!</string>
+
 </resources>

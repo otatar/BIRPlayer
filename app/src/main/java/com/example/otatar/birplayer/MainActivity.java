@@ -1,116 +1,85 @@
 package com.example.otatar.birplayer;
 
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
-import android.support.v4.view.ViewPager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import java.util.ArrayList;
-
 
 public class MainActivity extends AppCompatActivity {
 
-    private static String SERVER_URL = "http://10.0.2.2:8081/get_stations";
+    private static final String LOG_TAG = "MainActivityLog";
 
-    /* Array list that contains radio station objects */
-    private ArrayList<RadioStation> radioStations;
-
-    /* Reference to radio station lab object */
-    private RadioStationLab radioStationLab;
-
-    /* View Pager */
-    private ViewPager viewPager;
-
+    // Whether there is a Wi-Fi connection.
+    private static boolean wifiConnected = false;
+    // Whether there is a mobile connection.
+    private static boolean mobileConnected = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //*********************** Check network connection *****************************************
+        switch (NetworkUtil.checkNetworkConnection(this)) {
 
-        /* Reference to radio station lab object */
-        radioStationLab = RadioStationLab.get(this);
+            case NetworkUtil.TYPE_WIFI:
+                //Start NowPlayingActivity
+                Intent intent = new Intent(this, NowPlayingActivity.class);
+                startActivity(intent);
+                break;
 
-         /* Register listener for database refresh */
-        radioStationLab.setActivity(new RadioStationLab.RadioStationRefreshable() {
-            @Override
-            public void onRadioStationRefreshed() {
-                Log.d("MAIN", "Refreshed!");
-                // Get radio stations from database
-                radioStations = radioStationLab.getRadioStationsDB();
+            case NetworkUtil.TYPE_MOBILE:
+                //Alert user about connection with a dialog
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setMessage(R.string.mobile_connection_hint)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
 
-                /* Inform Viewpager's adapter about change */
-                viewPager.getAdapter().notifyDataSetChanged();
-            }
-        });
+                                        //Start NowPlayingActivity
+                                        Intent intent = new Intent(getApplicationContext(), NowPlayingActivity.class);
+                                        startActivity(intent);
 
-        /* View Pager */
-        viewPager = (ViewPager) findViewById(R.id.viewpager);
+                                    }
+                                }
+                        );
 
-       /*  Fragment fragment = new RadioPlayerFragment();
-        Fragment fragment = new TestJsonFragment();
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        ft.add(R.id.frame1, fragment);
-        //ft.addToBackStack(null);
-        ft.commit(); */
+                AlertDialog dialog = builder.create();
+                dialog.show();
+                break;
 
-        //Load radio stations from web into database
-        radioStationLab.getRadioStationsWeb(SERVER_URL);
+            case NetworkUtil.TYPE_NOT_CONNECTED:
+                //Alert user about connection with a dialog
+                AlertDialog.Builder builder1 = new AlertDialog.Builder(this);
+                builder1.setMessage(R.string.no_connection)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
 
-        // Get radio stations from database
-        radioStations = radioStationLab.getRadioStationsDB();
+                                        //Start NowPlayingActivity
+                                        Intent intent = new Intent(getApplicationContext(), NowPlayingActivity.class);
+                                        startActivity(intent);
+                                    }
+                                }
+                        );
 
-        //Start service
-        startService(RadioPlayerService.newStartIntent(this));
+                AlertDialog dialog1 = builder1.create();
+                dialog1.show();
+                break;
 
-
-        // We need fragment manager
-        FragmentManager fragmentManager = getSupportFragmentManager();
-
-        /* Setting up ViewPager Adapter */
-        viewPager.setAdapter(new FragmentStatePagerAdapter(fragmentManager) {
-
-            @Override
-            public Fragment getItem(int position) {
-                RadioStation radioStation = radioStations.get(position);
-                return RadioPlayerFragment.newInstance(radioStation);
-            }
-
-            @Override
-            public int getCount() {
-                return radioStations.size();
-            }
-        });
-
-
-        /* Setting up OnPageChangeListener */
-        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
-            }
-
-            @Override
-            public void onPageSelected(int position) {
-
-                Log.i("Main", "onPageSelected");
-
-                /* When page changes stop media player if it is playing */
-                Intent stopIntent = new Intent(MainActivity.this, RadioPlayerService.class);
-                stopIntent.setAction(RadioPlayerFragment.ACTION_STOP);
-                startService(stopIntent);
-
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-
-            }
-        });
-
+            //**************************************************************************************
+        }
 
     }
+
+
+
+
 }
+
+
