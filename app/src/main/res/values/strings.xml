@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">BIR Player</string>
 
+    <string name="test">Test</string>
+
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="button_play">Play</string>
@@ -14,5 +16,17 @@
     mobilni operator naplati troškove prenosa podataka!</string>
     <string name="ok">Uredu</string>
     <string name="no_audio_focus">Audio sistem zauzet!</string>
+
+    <string name="open_drawer">Open drawer</string>
+    <string name="close_drawer">Close drawer</string>
+
+    <string-array name="drawer_items">
+        <item>Sve radio stanice</item>
+        <item>Omiljene radio stanice</item>
+        <item>Zabavna</item>
+        <item>Narodna</item>
+        <item>Sarajevo</item>
+    </string-array>
+
 
 </resources>

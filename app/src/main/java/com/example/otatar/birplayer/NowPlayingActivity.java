@@ -7,45 +7,28 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.MenuItem;
+
 import java.util.ArrayList;
 
 
 public class NowPlayingActivity extends AppCompatActivity {
 
-    private static String SERVER_URL = "http://10.0.2.2:8081/get_stations";
-
-    /* Array list that contains radio station objects */
-    private ArrayList<RadioStation> radioStations;
-
-    /* Reference to radio station lab object */
-    private RadioStationLab radioStationLab;
-
     /* View Pager */
     private ViewPager viewPager;
+
+    private ArrayList<RadioStation> radioStations = new ArrayList<>();
+
+    /* Starting radio station position */
+    private int radioStationPosition;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_now_playing);
-
-
-        /* Reference to radio station lab object */
-        radioStationLab = RadioStationLab.get(this);
-
-         /* Register listener for database refresh */
-        radioStationLab.setActivity(new RadioStationLab.RadioStationRefreshable() {
-            @Override
-            public void onRadioStationRefreshed() {
-                Log.d("MAIN", "Refreshed!");
-                // Get radio stations from database
-                radioStations = radioStationLab.getRadioStationsDB();
-
-                /* Inform Viewpager's adapter about change */
-                viewPager.getAdapter().notifyDataSetChanged();
-            }
-        });
 
         /* View Pager */
         viewPager = (ViewPager) findViewById(R.id.viewpager);
@@ -57,15 +40,19 @@ public class NowPlayingActivity extends AppCompatActivity {
         //ft.addToBackStack(null);
         ft.commit(); */
 
-        //Load radio stations from web into database
-        radioStationLab.getRadioStationsWeb(SERVER_URL);
+        /* List Type */
+        if (getIntent().getBooleanExtra(MainActivity.EXTRA_LIST_TYPE, false)) {
+            radioStations = MainActivity.radioStationsPartial;
+        } else {
+            radioStations = MainActivity.radioStationsAll;
+        }
 
-        // Get radio stations from database
-        radioStations = radioStationLab.getRadioStationsDB();
+        /* Radio station position */
+        radioStationPosition = getIntent().getIntExtra(MainActivity.EXTRA_RADIO_STATION_POSITION, 0);
+
 
         //Start service
         startService(RadioPlayerService.newStartIntent(this));
-
 
         // We need fragment manager
         FragmentManager fragmentManager = getSupportFragmentManager();
@@ -76,6 +63,7 @@ public class NowPlayingActivity extends AppCompatActivity {
             @Override
             public Fragment getItem(int position) {
                 RadioStation radioStation = radioStations.get(position);
+
                 return RadioPlayerFragment.newInstance(radioStation);
             }
 
@@ -111,6 +99,35 @@ public class NowPlayingActivity extends AppCompatActivity {
             }
         });
 
+        //Set the start position
+        viewPager.setCurrentItem(radioStationPosition);
+
+        //Show button on toolbar
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
 
     }
+
+    /**
+     * When back button is pressed, go to previous activity
+     *
+     * @param item
+     * @return
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+
+            //Make new activity slide in
+            overridePendingTransition(R.anim.anim_slide_in_left, R.anim.anim_slide_out_right);
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
 }

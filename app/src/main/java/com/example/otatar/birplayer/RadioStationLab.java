@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Created by o.tatar on 22-Sep-16.
@@ -41,6 +42,10 @@ public class RadioStationLab {
 
     // Static variable to hold reference to self
     public static RadioStationLab radioStationLab;
+
+    public static final String[] radioGenrePop = {"pop", "zabavna"};
+    public static final String[] radioGenreFolk = {"folk", "narodna"};
+
 
     /**
      * Returns single instance of RadioStationLab class
@@ -213,6 +218,7 @@ public class RadioStationLab {
 
             URL httpurl = new URL(url);
             HttpURLConnection connection = (HttpURLConnection) httpurl.openConnection();
+            Log.d(LOG_TAG, "Prošo");
 
             try {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -237,5 +243,45 @@ public class RadioStationLab {
         }
     }
 
+    /**
+     * Filters list of all radio stations for radio station with specific genre
+     * @param genres
+     */
+    public static void filterRadioStationsByGenre(String[] genres) {
+
+        Log.d(LOG_TAG, RadioStationLab.class + ":filterRadioStationByGenre");
+
+        //Go through stations
+        for (RadioStation radioStation: MainActivity.radioStationsAll) {
+
+            //Split genres
+            for (String genre:radioStation.getRadioStationGenre().split(",")) {
+                //If there is a match, add radio station to list
+                if (Arrays.asList(genres).contains(genre.toLowerCase())) {
+                    MainActivity.radioStationsPartial.add(radioStation);
+                }
+
+            }
+        }
+    }
+
+
+    /**
+     * Filters list of all radio stations for radio station with specific location
+     * @param location
+     */
+    public static void filterRadioStationsByLocation(String location) {
+
+        Log.d(LOG_TAG, RadioStationLab.class + ":filterRadioStationByLocation");
+
+        //Go through stations
+        for (RadioStation radioStation: MainActivity.radioStationsAll) {
+
+            if (radioStation.getRadioStationLocation().equals(location)){
+                MainActivity.radioStationsPartial.add(radioStation);
+            }
+        }
+
+    }
 
 }

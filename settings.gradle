@@ -1,1 +1,1 @@
-include ':app'
+include ':app', ':simple-item-decoration-1.0.0'
