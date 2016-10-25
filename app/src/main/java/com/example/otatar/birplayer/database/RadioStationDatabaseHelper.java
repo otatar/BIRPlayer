@@ -6,6 +6,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import com.example.otatar.birplayer.database.RadioStationDbSchema.RadioStationTable;
+import com.example.otatar.birplayer.database.RadioStationDbSchema.FavoriteTable;
+
+
 
 /**
  * Created by o.tatar on 22-Sep-16.
@@ -30,7 +33,8 @@ public class RadioStationDatabaseHelper extends SQLiteOpenHelper {
                    RadioStationTable.Cols.STATION_URL + " STRING, " +
                    RadioStationTable.Cols.STATION_LOCATION + " STRING, " +
                    RadioStationTable.Cols.LISTEN_URL + " STRING, " +
-                   RadioStationTable.Cols.LISTEN_TYPE + " STRING" + ")"
+                   RadioStationTable.Cols.LISTEN_TYPE + " STRING, " +
+                   RadioStationTable.Cols.FAVORITE + " INTEGER DEFAULT 0" + ")"
         );
 
         //Put some values into database
@@ -58,6 +62,13 @@ public class RadioStationDatabaseHelper extends SQLiteOpenHelper {
 
         // Insert into database
         db.insert(RadioStationTable.DB_TABLE_NAME, null, values);
+
+        // We need favorite table
+        db.execSQL("CREATE TABLE " + FavoriteTable.DB_TABLE_NAME + "(" +
+                "_id INTEGER primary key autoincrement, " +
+                FavoriteTable.Cols.ID_RADIO_STATION + " INTEGER, " +
+                FavoriteTable.Cols.FAVORITE + " INTEGER" + ")"
+        );
 
     }
 

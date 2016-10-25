@@ -19,8 +19,22 @@ public class RadioStationDbSchema {
             public static final String STATION_LOCATION = "station_location";
             public static final String LISTEN_URL = "listen_url";
             public static final String LISTEN_TYPE = "listen_type";
+            public static final String FAVORITE = "favorite";
 
         }
+    }
+
+    public static final class FavoriteTable {
+
+        public static final String DB_TABLE_NAME = "favorite_radio_stations";
+
+        public static final class Cols {
+
+            public static final String ID_RADIO_STATION = "id_radio_station";
+            public static final String FAVORITE = "favorite";
+
+        }
+
     }
 
 }

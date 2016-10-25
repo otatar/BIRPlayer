@@ -1,18 +1,15 @@
 package com.example.otatar.birplayer;
 
 import android.app.Activity;
-import android.content.Context;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBar;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -23,7 +20,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -42,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = "MainActivityLog";
 
     private static String SERVER_URL = "http://10.0.2.2:8081/get_stations";
+    private static String REMOTE_SERVER_URL = "http://82.118.0.14:8081/get_stations";
 
     // Bundle string to denote radio station list type
     public static final String EXTRA_LIST_TYPE = "bundle_list_type";
@@ -64,6 +61,9 @@ public class MainActivity extends AppCompatActivity {
     //List View
     private ListView drawerList;
 
+    //Swipe refresh
+    private SwipeRefreshLayout swipeRefresh;
+
     //Recycler View
     private RecyclerView recyclerView;
 
@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private RadioStationAdapter radioStationAdapter;
 
     /* Array list that contains all radio station objects */
-    public static ArrayList<RadioStation> radioStationsAll;
+    public static ArrayList<RadioStation> radioStationsAll = new ArrayList<>();
 
     /* Array list that contains partial radio station objects */
     public static ArrayList<RadioStation> radioStationsPartial;
@@ -106,13 +106,25 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
-        void bindRadioStation(RadioStation radioStation) {
+        void bindRadioStation(final RadioStation radioStation) {
 
             Log.d(LOG_TAG, getClass().getName() + ":bindRadioStation");
 
+            // Set the content of views
             listStationName.setText(radioStation.getRadioStationName());
             listStationLocation.setText(radioStation.getRadioStationLocation());
             listStationGenre.setText(radioStation.getRadioStationGenre());
+            listFavorite.setChecked(radioStation.getFavorite());
+
+            listFavorite.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.d(LOG_TAG, getClass().getName() + ":onClick");
+
+                    radioStation.setFavorite(listFavorite.isChecked());
+                    RadioStationLab.updateFavoriteRadioStation(radioStation, listFavorite.isChecked());
+                }
+            });
         }
 
         @Override
@@ -182,26 +194,42 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Log.d(LOG_TAG, "Main onCreate");
+
+        final ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage(getString(R.string.radio_station_loading));
+        progressDialog.show();
 
         /* Reference to radio station lab object */
-        radioStationLab = RadioStationLab.get(this);
-
-        //Load radio stations from web into database
-        radioStationLab.getRadioStationsWeb(SERVER_URL);
+        radioStationLab = RadioStationLab.get(MainActivity.this);
 
         // Get radio stations from database
-        radioStationsAll = radioStationLab.getRadioStationsDB();
+        //radioStationLab.getRadioStations();
+
+        // Load radio stations from web into database
+        radioStationLab.getRadioStationsWeb(SERVER_URL);
 
         /* Register listener for database refresh */
-        radioStationLab.setActivity(new RadioStationLab.RadioStationRefreshable() {
+        radioStationLab.setRadioStationRefreshable(new RadioStationLab.RadioStationRefreshable() {
             @Override
             public void onRadioStationRefreshed() {
-                Log.d(LOG_TAG, "Radio station database refreshed!");
-                // Get radio stations from database
-                radioStationsAll = radioStationLab.getRadioStationsDB();
+                Log.d(LOG_TAG, "Radio station data refreshed!" + radioStationsAll.size());
 
                 /* Inform Viewpager's adapter about change */
                 recyclerView.getAdapter().notifyDataSetChanged();
+
+                //If refreshing animation is running, stop it
+                if (swipeRefresh.isRefreshing()) {
+                    swipeRefresh.setRefreshing(false);
+                }
+
+                //If progress bar i spinning, stop it
+                if (progressDialog.isShowing()) {
+                    progressDialog.dismiss();
+                }
+
+                //Show recycler view
+                recyclerView.setVisibility(View.VISIBLE);
             }
         });
 
@@ -210,6 +238,7 @@ public class MainActivity extends AppCompatActivity {
         drawerLayout = (DrawerLayout) findViewById(R.id.navigation_drawer);
         drawerList = (ListView) findViewById(R.id.list_view);
         recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 
@@ -235,7 +264,12 @@ public class MainActivity extends AppCompatActivity {
                         break;
 
                     case 1:
-                        //Favorite, do nothing for now
+                        //Favorite
+                        MainActivity.radioStationsPartial = new ArrayList<>();
+                        RadioStationLab.filterRadioStationByFavorite();
+                        isRadioStationListPartial = true;
+                        radioStationAdapter.setRadioStationList(radioStationsPartial);
+                        radioStationAdapter.notifyDataSetChanged();
                         break;
 
                     case 2:
@@ -305,6 +339,22 @@ public class MainActivity extends AppCompatActivity {
         //Setting adapter
         recyclerView.setAdapter(radioStationAdapter);
 
+        // Register listener for swipe refresh, refreshes radio list in background
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                Log.d(LOG_TAG, getClass().getName() + ":onRefresh");
+
+                if (isRadioStationListPartial) {
+                    //Well do nothing
+                    swipeRefresh.setRefreshing(false);
+                } else {
+                    // Load radio stations from web into database
+                    radioStationLab.getRadioStationsWeb(SERVER_URL);
+                }
+            }
+        });
+
         // Check network connection and alter user about it
         checkAndAlertNetworkConnection();
 
@@ -332,6 +382,12 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        recyclerView.getAdapter().notifyDataSetChanged();
+    }
 
     /**
      * Checks network connection and alerts user about that

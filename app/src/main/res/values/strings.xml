@@ -19,6 +19,7 @@
 
     <string name="open_drawer">Open drawer</string>
     <string name="close_drawer">Close drawer</string>
+    <string name="radio_station_loading">Učitavam radio stanice</string>
 
     <string-array name="drawer_items">
         <item>Sve radio stanice</item>

@@ -20,24 +20,33 @@
 
     <android.support.v4.widget.DrawerLayout
         android:id="@+id/navigation_drawer"
-        android:layout_height="match_parent"
         android:layout_width="match_parent"
-        android:background="@drawable/listitem_background"
-        android:layout_marginTop="?attr/actionBarSize">
+        android:layout_height="match_parent"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:background="@drawable/listitem_background">
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/recycler_view"
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/swipe_refresh"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent">
 
-        <ListView android:id="@+id/list_view"
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="invisible"/>
+
+        </android.support.v4.widget.SwipeRefreshLayout>
+
+        <ListView
+            android:id="@+id/list_view"
             android:layout_width="240dp"
             android:layout_height="match_parent"
             android:layout_gravity="left|start"
+            android:background="#FFFFFF"
             android:choiceMode="singleChoice"
             android:dividerHeight="2dp"
-            android:listSelector="@drawable/recycler_highlight"
-            android:background="#FFFFFF"/>
+            android:listSelector="@drawable/recycler_highlight" />
 
     </android.support.v4.widget.DrawerLayout>
 

@@ -48,6 +48,13 @@
             android:layout_marginTop="20dp"
             android:text="Status"/>
 
+        <CheckBox
+            android:id="@+id/station_favorite"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="?android:attr/starStyle"
+            android:layout_gravity="center_horizontal"/>
+
     </LinearLayout>
 
     <RelativeLayout

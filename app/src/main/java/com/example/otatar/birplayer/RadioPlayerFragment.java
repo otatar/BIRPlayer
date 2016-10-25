@@ -17,6 +17,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TextView;
 
 import org.w3c.dom.Text;
@@ -59,7 +60,11 @@ public class RadioPlayerFragment extends Fragment {
     //Reference to service messenger
     private Messenger toServiceMessenger;
 
+    /* Reference to status TextView */
     private TextView statusTextView;
+
+    /* Reference to favorite check box */
+    private CheckBox favoriteCheckBox;
 
 
 
@@ -148,11 +153,11 @@ public class RadioPlayerFragment extends Fragment {
         TextView radioStationLocation = (TextView) v.findViewById(R.id.radio_location);
         TextView radioStationUrl = (TextView) v.findViewById(R.id.radio_url);
         statusTextView = (TextView) v.findViewById(R.id.text_status);
+        favoriteCheckBox = (CheckBox) v.findViewById(R.id.station_favorite);
 
         Button buttonPlay = (Button)v.findViewById(R.id.button_play);
         Button buttonPause = (Button)v.findViewById(R.id.button_pause);
         Button buttonStop = (Button)v.findViewById(R.id.button_stop);
-
 
 
         //Listener for play button
@@ -186,6 +191,25 @@ public class RadioPlayerFragment extends Fragment {
             }
         });
 
+        //Listener for check box
+        favoriteCheckBox.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if (favoriteCheckBox.isChecked()) {
+                    // Set favorite
+                    radioStation.setFavorite(true);
+                    // Update database
+                    RadioStationLab.updateFavoriteRadioStation(radioStation, true);
+                } else {
+                    radioStation.setFavorite(false);
+                    // Update database
+                    RadioStationLab.updateFavoriteRadioStation(radioStation, false);
+                }
+
+            }
+        });
+
         // Set radio station name
         radioStationName.setText(radioStation.getRadioStationName());
 
@@ -194,6 +218,9 @@ public class RadioPlayerFragment extends Fragment {
 
         // Set radio station url
         radioStationUrl.setText(radioStation.getRadioStationUrl());
+
+        //Set favorite check box
+        favoriteCheckBox.setChecked(radioStation.getFavorite());
 
         return v;
     }

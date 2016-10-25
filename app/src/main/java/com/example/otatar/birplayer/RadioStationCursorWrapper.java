@@ -25,8 +25,9 @@ public class RadioStationCursorWrapper extends CursorWrapper {
         String url = getString(getColumnIndex(RadioStationDbSchema.RadioStationTable.Cols.STATION_URL));
         String listen_url = getString(getColumnIndex(RadioStationDbSchema.RadioStationTable.Cols.LISTEN_URL));
         String type = getString(getColumnIndex(RadioStationDbSchema.RadioStationTable.Cols.LISTEN_TYPE));
+        int favorite = getInt(getColumnIndex(RadioStationDbSchema.RadioStationTable.Cols.FAVORITE));
 
-        RadioStation radioStation = new RadioStation(id, sid, name, genre, url, location, listen_url, type);
+        RadioStation radioStation = new RadioStation(id, sid, name, genre, url, location, listen_url, type, favorite);
 
         return radioStation;
 

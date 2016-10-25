@@ -16,9 +16,10 @@ public class RadioStation implements Serializable {
     private String radioStationLocation;
     private String listenUrl;
     private String listenType;
+    private Boolean isFavorite;
 
     public RadioStation(int id, int sid, String name, String genre, String url,
-                        String location, String  listenUrl, String type) {
+                        String location, String  listenUrl, String type, int favorite) {
 
         this.id = id;
         this.sid = sid;
@@ -28,8 +29,11 @@ public class RadioStation implements Serializable {
         this.radioStationLocation= location;
         this.listenUrl = listenUrl;
         this.listenType = type;
+        this.isFavorite = (favorite == 0) ? false : true;
 
     }
+
+    /* Getters and setters */
 
     public int getId() {
         return id;
@@ -61,5 +65,13 @@ public class RadioStation implements Serializable {
 
     public int getSid() {
         return sid;
+    }
+
+    public Boolean getFavorite() {
+        return isFavorite;
+    }
+
+    public void setFavorite(Boolean favorite) {
+        isFavorite = favorite;
     }
 }
