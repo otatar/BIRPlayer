@@ -55,6 +55,18 @@
             style="?android:attr/starStyle"
             android:layout_gravity="center_horizontal"/>
 
+        <com.pheelicks.visualizer.VisualizerView
+            android:id="@+id/visualizer_view"
+            android:layout_width="match_parent"
+            android:layout_height="235dp" />
+
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:visibility="gone"/>
+
     </LinearLayout>
 
     <RelativeLayout

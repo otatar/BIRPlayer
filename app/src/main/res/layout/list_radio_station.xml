@@ -4,7 +4,8 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:background="@drawable/recycler_highlight"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:baselineAligned="false">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -55,6 +56,22 @@
             android:layout_gravity="center_horizontal" />
 
     </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:orientation="vertical">
+        
+        <es.claucookie.miniequalizerlibrary.EqualizerView
+            android:id="@+id/mini_equalizer"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center_horizontal"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+
 
 </LinearLayout>
 

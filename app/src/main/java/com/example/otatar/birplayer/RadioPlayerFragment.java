@@ -4,6 +4,8 @@ package com.example.otatar.birplayer;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -11,6 +13,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -18,9 +21,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.pheelicks.visualizer.VisualizerView;
+import com.pheelicks.visualizer.renderer.BarGraphRenderer;
+
 import org.w3c.dom.Text;
+
+import es.claucookie.miniequalizerlibrary.EqualizerView;
 
 
 /**
@@ -37,6 +46,10 @@ public class RadioPlayerFragment extends Fragment {
     public static final String ACTION_START = "start";
     public static final String ACTION_STOP = "stop";
     public static final String ACTION_PAUSE = "pause";
+    public static final int SEND_TITLE = 6;
+    public static final int SEND_BUFFERING = 5;
+    public static final int SEND_ERROR = 4;
+    public static final int SEND_ALERT = 3;
     public static final int SEND_ACTION = 2;
     public static final int UPDATE_STATUS = 1;
     public static final int REGISTER = 0;
@@ -55,7 +68,7 @@ public class RadioPlayerFragment extends Fragment {
     private Boolean bound = false;
 
     //Messenger
-    private Messenger fromServiceMessenger = new Messenger(new IncomingHandler());
+    private Messenger fromServiceMessenger;
     
     //Reference to service messenger
     private Messenger toServiceMessenger;
@@ -65,6 +78,12 @@ public class RadioPlayerFragment extends Fragment {
 
     /* Reference to favorite check box */
     private CheckBox favoriteCheckBox;
+
+    /* Reference to progress_bar*/
+    private ProgressBar progressBar;
+
+    /* Reference to visualizer view */
+    private com.pheelicks.visualizer.VisualizerView visualizerView;
 
 
 
@@ -94,11 +113,32 @@ public class RadioPlayerFragment extends Fragment {
      * Handler of incoming messages from service.
      */
     class IncomingHandler extends Handler {
+
+        ProgressBar progressBar;
+
+        IncomingHandler(ProgressBar progressBar) {
+            this.progressBar = progressBar;
+        }
         @Override
         public void handleMessage(Message msg) {
             if(msg.what == UPDATE_STATUS)  {
                 Bundle bundle = msg.getData();
                 setStatusField(bundle.getString(STATUS));
+
+            } else if (msg.what == SEND_ERROR || msg.what == SEND_ALERT) {
+                //Inform user about that
+                Bundle bundle = msg.getData();
+                showSnackBar(bundle.getString(EXTRA_PARAM));
+
+            } else if (msg.what == SEND_BUFFERING) {
+                if(msg.getData().getString(EXTRA_PARAM).equals("start")) {
+                    progressBar.setVisibility(View.VISIBLE);
+                } else {
+                    progressBar.setVisibility(View.GONE);
+                }
+
+            } else if (msg.what == SEND_TITLE) {
+                setStatusField(msg.getData().getString(EXTRA_PARAM));
             }
         }
     }
@@ -137,6 +177,8 @@ public class RadioPlayerFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        fromServiceMessenger = new Messenger(new IncomingHandler(progressBar));
+
         /* Get RadioStaion object from fragments arguments */
         radioStation = (RadioStation) getArguments().getSerializable(RADIO_STATION_OBJECT);
 
@@ -154,11 +196,16 @@ public class RadioPlayerFragment extends Fragment {
         TextView radioStationUrl = (TextView) v.findViewById(R.id.radio_url);
         statusTextView = (TextView) v.findViewById(R.id.text_status);
         favoriteCheckBox = (CheckBox) v.findViewById(R.id.station_favorite);
+        progressBar = (ProgressBar) v.findViewById(R.id.progress_bar);
+        visualizerView = (VisualizerView) v.findViewById(R.id.visualizer_view);
 
         Button buttonPlay = (Button)v.findViewById(R.id.button_play);
         Button buttonPause = (Button)v.findViewById(R.id.button_pause);
         Button buttonStop = (Button)v.findViewById(R.id.button_stop);
 
+
+        // Incoming messenger
+        fromServiceMessenger = new Messenger(new IncomingHandler(progressBar));
 
         //Listener for play button
         buttonPlay.setOnClickListener(new View.OnClickListener() {
@@ -273,17 +320,41 @@ public class RadioPlayerFragment extends Fragment {
                     break;
                 case RadioPlayerService.MP_PLAYING:
                     status = "Playing...";
+                    visualizerView.link(RadioPlayerService.getMediaPlayer());
+
+                    Paint paint = new Paint();
+                    paint.setStrokeWidth(50f);
+                    paint.setAntiAlias(true);
+                    paint.setColor(Color.argb(200, 56, 138, 252));
+                    BarGraphRenderer barGraphRendererBottom = new BarGraphRenderer(16, paint, false);
+                    visualizerView.addRenderer(barGraphRendererBottom);
+
                     break;
                 case RadioPlayerService.MP_STOPPED:
                     status = "Stopped";
+                    visualizerView.release();
+                    progressBar.setVisibility(View.GONE);
                     break;
                 case RadioPlayerService.MP_PAUSED:
                     status = "Paused";
                     break;
                 default:
-                    status = "";
+                    status = statusText;
             }
             statusTextView.setText(status);
+    }
+
+    /**
+     * Show message via snack bar to the user
+     * @param msg
+     */
+    private void showSnackBar(String msg) {
+
+        Log.d(LOG_TAG, "showSnackBar");
+
+        Snackbar snackbar = Snackbar
+                .make(getView(), msg, Snackbar.LENGTH_LONG);
+        snackbar.show();
     }
 
 
@@ -318,6 +389,16 @@ public class RadioPlayerFragment extends Fragment {
             }
 
         }
+    }
+
+    public static String sec2min(int sec) {
+
+        int hour = sec / 3600;
+        int min = (sec % 3600) / 60;
+        int res_sec = (sec % 3600) % 60;
+
+        return String.format("%02d", hour) + ":" + String.format("%02d", min) + ":" + String.format("%02d", res_sec);
+
     }
 
 }

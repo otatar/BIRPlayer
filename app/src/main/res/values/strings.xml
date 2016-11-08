@@ -20,6 +20,12 @@
     <string name="open_drawer">Open drawer</string>
     <string name="close_drawer">Close drawer</string>
     <string name="radio_station_loading">Učitavam radio stanice</string>
+    <string name="check_internet_connection">Provjerite internet konekciju...</string>
+    <string name="server_unreachable">Server nedostupan...</string>
+    <string name="streaming_server_unreachable">"Greška: Streaming server nedostupan</string>
+    <string name="streaming_server_lost_conn">Greška: Izgubljena konekcija sa streaming serverom</string>
+    <string name="search">Pretraga</string>
+    <string name="clear">Obriši</string>
 
     <string-array name="drawer_items">
         <item>Sve radio stanice</item>

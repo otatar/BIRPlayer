@@ -5,8 +5,12 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.Nullable;
+import android.support.annotation.RawRes;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -16,9 +20,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,11 +32,18 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.graphics.drawable.ColorDrawable;
 
 import com.dgreenhalgh.android.simpleitemdecoration.linear.DividerItemDecoration;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+
+import es.claucookie.miniequalizerlibrary.EqualizerView;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -46,11 +59,11 @@ public class MainActivity extends AppCompatActivity {
     //Bundle string to denote radio station position in list
     public static final String EXTRA_RADIO_STATION_POSITION = "bundle_radio_station_position";
 
-    // Whether there is a Wi-Fi connection.
-    private static boolean wifiConnected = false;
+    // Bundle string to denote radio station list name
+    public static final String EXTRA_LIST_TITLE = "bundle_list_title";
 
-    // Whether there is a mobile connection.
-    private static boolean mobileConnected = false;
+    // Whether there is a internet connection.
+    public static int internetConnection;
 
     //Drawer Layout
     private DrawerLayout drawerLayout;
@@ -70,6 +83,9 @@ public class MainActivity extends AppCompatActivity {
     //Recycler View Adapter
     private RadioStationAdapter radioStationAdapter;
 
+    //Search view
+    private SearchView searchView;
+
     /* Array list that contains all radio station objects */
     public static ArrayList<RadioStation> radioStationsAll = new ArrayList<>();
 
@@ -82,6 +98,9 @@ public class MainActivity extends AppCompatActivity {
     /* Reference to radio station lab object */
     private RadioStationLab radioStationLab;
 
+    /* Reference to activity title */
+    String activityTitle;
+
 
     /**
      * Class needed for recycler view
@@ -92,6 +111,7 @@ public class MainActivity extends AppCompatActivity {
         private TextView listStationLocation;
         private TextView listStationGenre;
         private CheckBox listFavorite;
+        private EqualizerView listEqualizer;
 
         public RadioStationHolder(View itemView) {
             super(itemView);
@@ -100,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
             listStationGenre = (TextView) itemView.findViewById(R.id.list_radio_genre);
             listStationLocation = (TextView) itemView.findViewById(R.id.list_radio_location);
             listFavorite = (CheckBox) itemView.findViewById(R.id.list_favorite);
+            listEqualizer = (EqualizerView) itemView.findViewById(R.id.mini_equalizer);
 
             //Register holder for onClick events
             itemView.setOnClickListener(this);
@@ -115,6 +136,14 @@ public class MainActivity extends AppCompatActivity {
             listStationLocation.setText(radioStation.getRadioStationLocation());
             listStationGenre.setText(radioStation.getRadioStationGenre());
             listFavorite.setChecked(radioStation.getFavorite());
+            Log.d(LOG_TAG, "Radio: " + radioStation.getRadioStationName() + ": " + radioStation.getPlaying());
+            if (radioStation.getPlaying()) {
+                listEqualizer.animateBars();
+                listEqualizer.setVisibility(View.VISIBLE);
+            } else {
+                listEqualizer.stopBars();
+                listEqualizer.setVisibility(View.GONE);
+            }
 
             listFavorite.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -134,9 +163,12 @@ public class MainActivity extends AppCompatActivity {
             Log.d(LOG_TAG, "Clicked on: "+ listStationName.getText() +" at position " +
                      getAdapterPosition());
 
-            //Launch now playing activity and set wiewpager on clicked radio station
+            searchView.clearFocus();
+
+            //Launch now playing activity and set viewpager on clicked radio station
             Intent intent = new Intent(getApplicationContext(), NowPlayingActivity.class);
             intent.putExtra(EXTRA_LIST_TYPE, isRadioStationListPartial);
+            intent.putExtra(EXTRA_LIST_TITLE, activityTitle);
             intent.putExtra(EXTRA_RADIO_STATION_POSITION, getAdapterPosition());
             startActivity(intent);
 
@@ -196,23 +228,56 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Log.d(LOG_TAG, "Main onCreate");
 
-        final ProgressDialog progressDialog = new ProgressDialog(this);
-        progressDialog.setMessage(getString(R.string.radio_station_loading));
-        progressDialog.show();
+        // Check network connection and alter user about it
+        checkAndAlertNetworkConnection();
+
+        //Get references to views
+        drawerLayout = (DrawerLayout) findViewById(R.id.navigation_drawer);
+        drawerList = (ListView) findViewById(R.id.list_view);
+        recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+
+        //Start SwipeRefreshLayout animation (this is workaround, cause there is a bug in api: https://code.google.com/p/android/issues/detail?id=77712)
+        swipeRefresh.post(new Runnable() {
+            @Override
+            public void run() {
+                if (internetConnection != NetworkUtil.TYPE_NOT_CONNECTED) {
+                    swipeRefresh.setRefreshing(true);
+                }
+            }
+        });
 
         /* Reference to radio station lab object */
         radioStationLab = RadioStationLab.get(MainActivity.this);
 
-        // Get radio stations from database
-        //radioStationLab.getRadioStations();
-
         // Load radio stations from web into database
-        radioStationLab.getRadioStationsWeb(SERVER_URL);
+        radioStationLab.getRadioStationsWeb(REMOTE_SERVER_URL);
 
         /* Register listener for database refresh */
         radioStationLab.setRadioStationRefreshable(new RadioStationLab.RadioStationRefreshable() {
+
+            //When database is refreshed
             @Override
-            public void onRadioStationRefreshed() {
+            public void onRadioStationRefreshed(String s) {
+
+                //If we didn't receive json object, then it is probably internet problem
+                try {
+                    JSONObject jsonObject = new JSONObject(s);
+                } catch (JSONException e) {
+                    //Notify user via snackbar
+                    Snackbar snackbar = Snackbar
+                            .make(findViewById(R.id.coordinator_layout),
+                                    getString(R.string.server_unreachable), Snackbar.LENGTH_INDEFINITE)
+                            .setAction(R.string.ok, new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+
+                                }
+                            });
+                    snackbar.show();
+
+                }
                 Log.d(LOG_TAG, "Radio station data refreshed!" + radioStationsAll.size());
 
                 /* Inform Viewpager's adapter about change */
@@ -220,30 +285,18 @@ public class MainActivity extends AppCompatActivity {
 
                 //If refreshing animation is running, stop it
                 if (swipeRefresh.isRefreshing()) {
+                    Log.d(LOG_TAG, "Refreshing...");
                     swipeRefresh.setRefreshing(false);
                 }
 
-                //If progress bar i spinning, stop it
-                if (progressDialog.isShowing()) {
-                    progressDialog.dismiss();
-                }
 
                 //Show recycler view
                 recyclerView.setVisibility(View.VISIBLE);
             }
         });
 
-
-        //Get references to views
-        drawerLayout = (DrawerLayout) findViewById(R.id.navigation_drawer);
-        drawerList = (ListView) findViewById(R.id.list_view);
-        recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-
         //Init nav drawer
-        drawerList.setAdapter(new ArrayAdapter<String>(this,
+        drawerList.setAdapter(new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
                 getResources().getStringArray(R.array.drawer_items)));
 
@@ -261,6 +314,8 @@ public class MainActivity extends AppCompatActivity {
                         isRadioStationListPartial = false;
                         radioStationAdapter.setRadioStationList(radioStationsAll);
                         radioStationAdapter.notifyDataSetChanged();
+                        activityTitle = getResources().getStringArray(R.array.drawer_items)[0];
+                        setTitle(activityTitle);
                         break;
 
                     case 1:
@@ -270,6 +325,8 @@ public class MainActivity extends AppCompatActivity {
                         isRadioStationListPartial = true;
                         radioStationAdapter.setRadioStationList(radioStationsPartial);
                         radioStationAdapter.notifyDataSetChanged();
+                        activityTitle = getResources().getStringArray(R.array.drawer_items)[1];
+                        setTitle(activityTitle);
                         break;
 
                     case 2:
@@ -279,6 +336,8 @@ public class MainActivity extends AppCompatActivity {
                         isRadioStationListPartial = true;
                         radioStationAdapter.setRadioStationList(radioStationsPartial);
                         radioStationAdapter.notifyDataSetChanged();
+                        activityTitle = getResources().getStringArray(R.array.drawer_items)[2];
+                        setTitle(activityTitle);
                         break;
 
                     case 3:
@@ -288,6 +347,8 @@ public class MainActivity extends AppCompatActivity {
                         isRadioStationListPartial = true;
                         radioStationAdapter.setRadioStationList(radioStationsPartial);
                         radioStationAdapter.notifyDataSetChanged();
+                        activityTitle = getResources().getStringArray(R.array.drawer_items)[3];
+                        setTitle(activityTitle);
                         break;
 
                     case 4:
@@ -298,6 +359,9 @@ public class MainActivity extends AppCompatActivity {
                         isRadioStationListPartial = true;
                         radioStationAdapter.setRadioStationList(radioStationsPartial);
                         radioStationAdapter.notifyDataSetChanged();
+                        activityTitle = getResources().getStringArray(R.array.drawer_items)[4];
+                        setTitle(activityTitle);
+                        break;
 
                 }
 
@@ -312,12 +376,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDrawerOpened(View drawerView) {
                 super.onDrawerOpened(drawerView);
+                invalidateOptionsMenu();
             }
 
             //Called on completely close state
             @Override
             public void onDrawerClosed(View drawerView) {
                 super.onDrawerClosed(drawerView);
+                invalidateOptionsMenu();
             }
 
         };
@@ -355,8 +421,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Check network connection and alter user about it
-        checkAndAlertNetworkConnection();
 
     }
 
@@ -389,11 +453,55 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.getAdapter().notifyDataSetChanged();
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_activity_menu, menu);
+
+        MenuItem searchItem = menu.findItem(R.id.menu_item_search);
+        searchView = (SearchView) searchItem.getActionView();
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                Log.d(LOG_TAG, "onQueryTextSubmit: " + query);
+
+                MainActivity.radioStationsPartial = new ArrayList<>();
+                RadioStationLab.filterRadioStationByName(query);
+                isRadioStationListPartial = true;
+                radioStationAdapter.setRadioStationList(radioStationsPartial);
+                radioStationAdapter.notifyDataSetChanged();
+
+                searchView.clearFocus();
+
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                Log.d(LOG_TAG, "onQueryTextChange: " + newText);
+
+                MainActivity.radioStationsPartial = new ArrayList<>();
+                RadioStationLab.filterRadioStationByName(newText);
+                isRadioStationListPartial = true;
+                radioStationAdapter.setRadioStationList(radioStationsPartial);
+                radioStationAdapter.notifyDataSetChanged();
+
+                return true;
+            }
+
+        });
+
+        return super.onCreateOptionsMenu(menu);
+
+
+
+    }
+
     /**
      * Checks network connection and alerts user about that
      */
     private void checkAndAlertNetworkConnection() {
-        switch (NetworkUtil.checkNetworkConnection(this)) {
+        switch (internetConnection = NetworkUtil.checkNetworkConnection(this)) {
 
             case NetworkUtil.TYPE_WIFI:
                 //Do nothing

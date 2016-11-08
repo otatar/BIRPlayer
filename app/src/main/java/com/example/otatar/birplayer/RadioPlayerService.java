@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.wifi.WifiManager;
+import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,6 +21,13 @@ import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Timer;
+import java.util.TimerTask;
 
 
 /**
@@ -39,7 +47,7 @@ public class RadioPlayerService extends Service {
     /**
      * Service in foreground?
      */
-    private boolean isForeground = false;
+    public static boolean isForeground = false;
 
     /**
      * Are we bound?
@@ -64,7 +72,7 @@ public class RadioPlayerService extends Service {
     /*
     * MediaPlayer Object
     */
-    public MediaPlayer mediaPlayer;
+    public static MediaPlayer mediaPlayer;
 
 
     public final IBinder binder = new RadioPlayerBinder();
@@ -78,6 +86,11 @@ public class RadioPlayerService extends Service {
      * ID used from notification service
      */
     public static final int NOTIFICATION_ID = 333;
+
+    /**
+     * Timer used for retrieving metadata from shoutcast/icecast server
+     */
+    public Timer retrieveTimer;
 
     private Messenger fragmentMessenger = null;
     private Messenger messenger = new Messenger(new IncomingHandler());
@@ -105,11 +118,28 @@ public class RadioPlayerService extends Service {
      */
     private String mpState = this.MP_NOT_READY;
 
+    // Static variable to hold reference to self (singleton)
+    public static RadioPlayerService radioPlayerService;
 
-    //Constructor
+
+    //Constructor (private - singleton)
     public RadioPlayerService() {
 
         this.mediaPlayer = new MediaPlayer();
+
+    }
+
+    /**
+     * Returns signle instance of RadioPlayerService class (singleton)
+     * @return
+     */
+    public static RadioPlayerService getRadioPlayerService() {
+
+        if (radioPlayerService == null) {
+            radioPlayerService = new RadioPlayerService();
+        }
+
+        return radioPlayerService;
 
     }
 
@@ -240,7 +270,7 @@ public class RadioPlayerService extends Service {
         mediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
 
         //Create WiFi lock
-        wiFiLock =  ((WifiManager) getSystemService(Context.WIFI_SERVICE))
+        wiFiLock = ((WifiManager) getSystemService(Context.WIFI_SERVICE))
                 .createWifiLock(WifiManager.WIFI_MODE_FULL, "mylock");
 
         // Get audio manager
@@ -288,12 +318,18 @@ public class RadioPlayerService extends Service {
             public boolean onError(MediaPlayer mp, int what, int extra) {
 
                 if(what == mediaPlayer.MEDIA_ERROR_UNKNOWN) {
-                    Log.d(LOG_TAG, radioStation.getListenUrl());
+                    Log.d(LOG_TAG, "Unknown error");
                     setMPState(RadioPlayerService.MP_ERROR);
                     sendStatus();
+                    //Send alert
+                    sendAlert(RadioPlayerFragment.SEND_ERROR, getResources().getString(R.string.streaming_server_unreachable));
+
                 } else if(what == mediaPlayer.MEDIA_ERROR_SERVER_DIED) {
+                    Log.d(LOG_TAG, "Lost connection to streaming server");
                     setMPState(RadioPlayerService.MP_LOST_CONNECTION);
                     sendStatus();
+                    //Send alert
+                    sendAlert(RadioPlayerFragment.SEND_ERROR, getResources().getString(R.string.streaming_server_unreachable));
                 }
                 return true;
             }
@@ -315,13 +351,12 @@ public class RadioPlayerService extends Service {
                     Log.w(LOG_TAG, "Could not get audio focus");
 
                     //Inform user about that
-                    Toast.makeText(getApplicationContext(), R.string.no_audio_focus, Toast.LENGTH_SHORT).show();
+                    sendAlert(RadioPlayerFragment.SEND_ALERT, getResources().getString(R.string.no_audio_focus));
 
                     //Reset media player and return
                     mediaPlayer.reset();
                     setMPState(RadioPlayerService.MP_NOT_READY);
                     sendStatus();
-
                 }
 
                 //Go in foreground
@@ -331,14 +366,40 @@ public class RadioPlayerService extends Service {
 
                 // Play!!!
                 mediaPlayer.start();
+                radioStation.setPlaying(true);
 
                 /* If we are connected over WiFi, acquire a WiFi lock */
-                if (NetworkUtil.checkNetworkConnection(getApplicationContext()) == NetworkUtil.TYPE_WIFI) {
+                if (MainActivity.internetConnection == NetworkUtil.TYPE_WIFI) {
                     wiFiLock.acquire();
                 }
                 setMPState(RadioPlayerService.MP_PLAYING);
                 sendStatus();
 
+                //Retrieve meta data from server
+                if (radioStation.getListenType().equals("0") || radioStation.getListenType().equals("1")) {
+                    refreshMetadata(radioStation.getListenUrl());
+                }
+
+            }
+        });
+
+        //Callback for on info update
+        mediaPlayer.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+            @Override
+            public boolean onInfo(MediaPlayer mp, int what, int extra) {
+                Log.d(LOG_TAG, "onInfo()");
+
+                if (what == MediaPlayer.MEDIA_INFO_BUFFERING_START) {
+                    // buffering
+                    Log.d(LOG_TAG, "Buffering started");
+                    sendAlert(RadioPlayerFragment.SEND_BUFFERING, "start");
+
+                } else if (what == MediaPlayer.MEDIA_INFO_BUFFERING_END) {
+                    // stop buffering
+                    Log.d(LOG_TAG, "Buffering stopped");
+                    sendAlert(RadioPlayerFragment.SEND_BUFFERING, "stop");
+                }
+                return false;
             }
         });
 
@@ -371,6 +432,7 @@ public class RadioPlayerService extends Service {
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         Log.d(LOG_TAG, "Setting data source: " + mediaURL);
         try {
+            //mediaPlayer.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL);
             mediaPlayer.setDataSource(mediaURL);
         } catch (Exception e) {
             Log.d(LOG_TAG, radioStation.getListenUrl() + e.toString());
@@ -393,18 +455,24 @@ public class RadioPlayerService extends Service {
         if (mpState == RadioPlayerService.MP_PAUSED || mpState == RadioPlayerService.MP_PLAYING) {
             // Play!!!
             mediaPlayer.start();
+            radioStation.setPlaying(true);
             setMPState(RadioPlayerService.MP_PLAYING);
             sendStatus();
 
+            //Retrieve meta data from server
+            if (radioStation.getListenType().equals("0") || radioStation.getListenType().equals("1")) {
+                refreshMetadata(radioStation.getListenUrl());
+            }
+
         } else if (mpState == RadioPlayerService.MP_ERROR) {
 
-            //Media player should be reseted
+            //Media player should be reset
             return;
 
         } else {
-            //We should first be prepared
-            mediaPlayer.prepareAsync();
+            //Because prepareAsync() can take too long if radio station server isn't reachable, check for it
             setMPState(RadioPlayerService.MP_CONNECTING);
+            mediaPlayer.prepareAsync();
             sendStatus();
         }
 
@@ -421,6 +489,12 @@ public class RadioPlayerService extends Service {
             mediaPlayer.pause();
             setMPState(RadioPlayerService.MP_PAUSED);
             sendStatus();
+            radioStation.setPlaying(false);
+
+            //Stop retrieving meta data from server
+            if (radioStation.getListenType().equals("0") || radioStation.getListenType().equals("1")) {
+                retrieveTimer.cancel();
+            }
         }
 
     }
@@ -453,6 +527,16 @@ public class RadioPlayerService extends Service {
             wiFiLock.release();
         }
 
+        //Stop retrieving metadata from server
+        if (retrieveTimer != null) {
+            retrieveTimer.cancel();
+        }
+
+        if (radioStation != null) {
+            radioStation.setPlaying(false);
+        }
+
+
     }
 
     /**
@@ -483,13 +567,33 @@ public class RadioPlayerService extends Service {
     }
 
     /**
+     * Send error to UI thread via messenger
+     * @param alert
+     */
+    private void sendAlert(int type, String alert) {
+
+        // Only send error message if we have UI bound to service
+        if (isBound) {
+            try {
+                Message msg = Message.obtain(null, type);
+                Bundle bundle = new Bundle();
+                bundle.putString(RadioPlayerFragment.EXTRA_PARAM, alert);
+                msg.setData(bundle);
+                fragmentMessenger.send(msg);
+            } catch (RemoteException e) {
+                Log.e(LOG_TAG, "Cannot send alert: " + alert);
+            }
+        }
+    }
+
+    /**
      * Moves Radio Player Service in foreground and sets notifications
      */
     private void serviceStartForeground() {
 
         //Pending intent
         PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0,
-                new Intent(getApplicationContext(), NowPlayingActivity.class),
+                new Intent(getApplicationContext(), NowPlayingActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP),
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
         // Intents for action keys
@@ -533,5 +637,59 @@ public class RadioPlayerService extends Service {
             stopForeground(true);
             isForeground = false;
         }
+    }
+
+    /**
+     * Try to retrieve metadata from shoutcast/icecast server
+     * @param url
+     */
+    private void refreshMetadata(String url) {
+        Log.d(LOG_TAG, "refreshMetadata()");
+
+        final IcyStreamMeta streamMeta = new IcyStreamMeta();
+
+        //Set the url
+        try {
+
+            streamMeta.setStreamUrl(new URL(url));
+        } catch (MalformedURLException e) {
+            Log.w(LOG_TAG, "Malformed URL: " + url);
+            return;
+        }
+
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                retrieveTimer = new Timer();
+                retrieveTimer.scheduleAtFixedRate(new TimerTask() {
+                    @Override
+                    public void run() {
+                        String songTitle = "";
+                        String artistName = "";
+                        try {
+                            songTitle = streamMeta.getTitle();
+                            artistName = streamMeta.getArtist();
+                        } catch (IOException e) {
+                            Log.d(LOG_TAG, "No song title info!");
+                            return;
+                        }
+
+                        //Send song title to RadioPlayer Fragment
+                        if (songTitle.length() > 4) {
+                            Log.d(LOG_TAG, "Artist: " + artistName + ", song title: " + songTitle);
+                            sendAlert(RadioPlayerFragment.SEND_TITLE, artistName + " - " + songTitle);
+                        }
+                    }
+                }, 0, 1000);
+
+            }
+        }).start();
+
+    }
+
+    public static MediaPlayer getMediaPlayer() {
+        return mediaPlayer;
     }
 }

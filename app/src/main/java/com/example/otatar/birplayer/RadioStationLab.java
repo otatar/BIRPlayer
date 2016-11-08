@@ -14,7 +14,6 @@ import com.example.otatar.birplayer.database.RadioStationDbSchema.RadioStationTa
 import com.example.otatar.birplayer.database.RadioStationDbSchema.FavoriteTable;
 
 
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,7 +25,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by o.tatar on 22-Sep-16.
@@ -53,12 +55,13 @@ public class RadioStationLab {
 
     /**
      * Returns single instance of RadioStationLab class
+     *
      * @param activity
      * @return radioStationLab
      */
     public static RadioStationLab get(Activity activity) {
 
-        if (radioStationLab == null){
+        if (radioStationLab == null) {
             radioStationLab = new RadioStationLab(activity);
         }
 
@@ -69,7 +72,7 @@ public class RadioStationLab {
      * Interface for informing activities about changing radio station data
      */
     static interface RadioStationRefreshable {
-        void onRadioStationRefreshed();
+        void onRadioStationRefreshed(String s);
     }
 
     /**
@@ -79,6 +82,7 @@ public class RadioStationLab {
 
     /**
      * Setting reference to radioStationRefreshable
+     *
      * @param activity
      */
     public void setRadioStationRefreshable(RadioStationRefreshable activity) {
@@ -88,6 +92,7 @@ public class RadioStationLab {
 
     /**
      * Private constructor
+     *
      * @param activity
      */
     private RadioStationLab(Activity activity) {
@@ -100,6 +105,7 @@ public class RadioStationLab {
 
     /**
      * Inserts radio stations data into database, from json string
+     *
      * @param jsonString
      */
     private void insertRadioStations(String jsonString) throws IOException, JSONException {
@@ -120,12 +126,12 @@ public class RadioStationLab {
             //Construct ContentValues
             ContentValues values = new ContentValues();
             values.put(RadioStationTable.Cols.SID, stationJsonObject.getInt("id"));
-            values.put(RadioStationTable.Cols.STATION_NAME,stationJsonObject.getString("station_name"));
-            values.put(RadioStationTable.Cols.STATION_GENRE,stationJsonObject.getString("station_genre"));
-            values.put(RadioStationTable.Cols.STATION_URL,stationJsonObject.getString("station_url"));
-            values.put(RadioStationTable.Cols.STATION_LOCATION,stationJsonObject.getString("station_location"));
-            values.put(RadioStationTable.Cols.LISTEN_URL,stationJsonObject.getString("listen_url"));
-            values.put(RadioStationTable.Cols.LISTEN_TYPE,stationJsonObject.getString("listen_type"));
+            values.put(RadioStationTable.Cols.STATION_NAME, stationJsonObject.getString("station_name"));
+            values.put(RadioStationTable.Cols.STATION_GENRE, stationJsonObject.getString("station_genre"));
+            values.put(RadioStationTable.Cols.STATION_URL, stationJsonObject.getString("station_url"));
+            values.put(RadioStationTable.Cols.STATION_LOCATION, stationJsonObject.getString("station_location"));
+            values.put(RadioStationTable.Cols.LISTEN_URL, stationJsonObject.getString("listen_url"));
+            values.put(RadioStationTable.Cols.LISTEN_TYPE, stationJsonObject.getString("listen_type"));
 
             // Insert into database
             database.insert(RadioStationTable.DB_TABLE_NAME, null, values);
@@ -176,7 +182,7 @@ public class RadioStationLab {
             MainActivity.radioStationsAll.clear();
             MainActivity.radioStationsAll.addAll(radioStations);
             //Inform about new list
-            radioStationRefreshable.onRadioStationRefreshed();
+            //radioStationRefreshable.onRadioStationRefreshed();
 
         }
 
@@ -193,6 +199,7 @@ public class RadioStationLab {
 
     /**
      * Fetches all radio stations from database.
+     *
      * @return list array of all radio stations
      */
     public ArrayList<RadioStation> getRadioStationsDB() {
@@ -236,9 +243,10 @@ public class RadioStationLab {
 
     /**
      * Fetch radio station data from web and store it in database
+     *
      * @param url
      */
-    public void getRadioStationsWeb(String url){
+    public void getRadioStationsWeb(String url) {
 
         Log.d(LOG_TAG, RadioStationLab.class + ":getRadioStationWeb");
         new FetchRadioStations().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, url);
@@ -266,8 +274,10 @@ public class RadioStationLab {
 
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Cannot load data from server: " + e.toString());
+                jsonString = e.toString();
             } catch (JSONException e) {
-              Log.e(LOG_TAG, e.toString());
+                Log.e(LOG_TAG, e.toString());
+                jsonString = e.toString();
             }
 
             //Load from database in ArrayList
@@ -280,11 +290,13 @@ public class RadioStationLab {
         @Override
         protected void onPostExecute(String s) {
             /* Inform radioStationRefreshable about refreshed data */
-            radioStationRefreshable.onRadioStationRefreshed();
+            radioStationRefreshable.onRadioStationRefreshed(s);
         }
+
 
         /**
          * Fetches html content from given url
+         *
          * @param url
          * @return html
          */
@@ -305,7 +317,7 @@ public class RadioStationLab {
 
                 int bytesRead = 0;
                 byte[] buffer = new byte[1024];
-                while((bytesRead = in.read(buffer)) > 0) {
+                while ((bytesRead = in.read(buffer)) > 0) {
                     out.write(buffer, 0, bytesRead);
                 }
                 out.close();
@@ -320,6 +332,7 @@ public class RadioStationLab {
 
     /**
      * Updates favorite radio station in database
+     *
      * @param radioStation
      * @param favorite
      */
@@ -343,7 +356,7 @@ public class RadioStationLab {
                 } else {
                     Log.d(LOG_TAG, "Deleting from " + FavoriteTable.DB_TABLE_NAME + " table: " + radioStation.getSid());
                     database.delete(FavoriteTable.DB_TABLE_NAME, FavoriteTable.Cols.ID_RADIO_STATION
-                            + " = ?", new String[] {Integer.toString(radioStation.getSid())});
+                            + " = ?", new String[]{Integer.toString(radioStation.getSid())});
                 }
 
 
@@ -353,7 +366,7 @@ public class RadioStationLab {
 
                 Log.d(LOG_TAG, "Updating " + RadioStationTable.DB_TABLE_NAME + " table");
                 database.update(RadioStationTable.DB_TABLE_NAME, contentValues,
-                        "_id = ?",  new String[] {Integer.toString(radioStation.getId())});
+                        "_id = ?", new String[]{Integer.toString(radioStation.getId())});
 
             }
         }).start();
@@ -361,9 +374,9 @@ public class RadioStationLab {
     }
 
 
-
     /**
      * Filters list of all radio stations for radio station with specific genre
+     *
      * @param genres
      */
     public static void filterRadioStationsByGenre(String[] genres) {
@@ -371,10 +384,10 @@ public class RadioStationLab {
         Log.d(LOG_TAG, RadioStationLab.class + ":filterRadioStationByGenre");
 
         //Go through stations
-        for (RadioStation radioStation: MainActivity.radioStationsAll) {
+        for (RadioStation radioStation : MainActivity.radioStationsAll) {
 
             //Split genres
-            for (String genre:radioStation.getRadioStationGenre().split(",")) {
+            for (String genre : radioStation.getRadioStationGenre().split(",")) {
                 //If there is a match, add radio station to list
                 if (Arrays.asList(genres).contains(genre.toLowerCase())) {
                     MainActivity.radioStationsPartial.add(radioStation);
@@ -387,6 +400,7 @@ public class RadioStationLab {
 
     /**
      * Filters list of all radio stations for radio station with specific location
+     *
      * @param location
      */
     public static void filterRadioStationsByLocation(String location) {
@@ -394,9 +408,9 @@ public class RadioStationLab {
         Log.d(LOG_TAG, RadioStationLab.class + ":filterRadioStationByLocation");
 
         //Go through stations
-        for (RadioStation radioStation: MainActivity.radioStationsAll) {
+        for (RadioStation radioStation : MainActivity.radioStationsAll) {
 
-            if (radioStation.getRadioStationLocation().equals(location)){
+            if (radioStation.getRadioStationLocation().equals(location)) {
                 MainActivity.radioStationsPartial.add(radioStation);
             }
         }
@@ -411,7 +425,7 @@ public class RadioStationLab {
         Log.d(LOG_TAG, RadioStationLab.class + ":filterRadioStationByFavorite");
 
         //Go through stations
-        for (RadioStation radioStation: MainActivity.radioStationsAll) {
+        for (RadioStation radioStation : MainActivity.radioStationsAll) {
 
             if (radioStation.getFavorite().equals(true)) {
                 MainActivity.radioStationsPartial.add(radioStation);
@@ -420,4 +434,27 @@ public class RadioStationLab {
 
     }
 
+    /**
+     * Filters list of all radio stations by name
+     * @param name
+     */
+    public static void filterRadioStationByName(String name) {
+
+        Log.d(LOG_TAG, RadioStationLab.class + ":filterRadioStationByName");
+
+
+        //Go through stations
+        for (RadioStation radioStation : MainActivity.radioStationsAll) {
+
+            if (radioStation.getRadioStationName().toLowerCase().contains(name.toLowerCase())) {
+                MainActivity.radioStationsPartial.add(radioStation);
+            }
+
+        }
+
+    }
+
+
 }
+
+

@@ -16,6 +16,7 @@ import java.util.ArrayList;
 
 public class NowPlayingActivity extends AppCompatActivity {
 
+    private static final String LOG_TAG = "NowPlayingActivity";
     /* View Pager */
     private ViewPager viewPager;
 
@@ -50,6 +51,8 @@ public class NowPlayingActivity extends AppCompatActivity {
         /* Radio station position */
         radioStationPosition = getIntent().getIntExtra(MainActivity.EXTRA_RADIO_STATION_POSITION, 0);
 
+        /* Set Activity title */
+        setTitle(getIntent().getStringExtra(MainActivity.EXTRA_LIST_TITLE));
 
         //Start service
         startService(RadioPlayerService.newStartIntent(this));
@@ -84,7 +87,7 @@ public class NowPlayingActivity extends AppCompatActivity {
             @Override
             public void onPageSelected(int position) {
 
-                Log.i("Main", "onPageSelected");
+                Log.i(LOG_TAG, "onPageSelected");
 
                 /* When page changes stop media player if it is playing */
                 Intent stopIntent = new Intent(NowPlayingActivity.this, RadioPlayerService.class);
@@ -130,4 +133,15 @@ public class NowPlayingActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        RadioPlayerApplication.activityResumed();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        RadioPlayerApplication.activityPaused();
+    }
 }

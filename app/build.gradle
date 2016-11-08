@@ -27,4 +27,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.3.0'
     compile 'com.android.support:design:23.3.0'
     compile project(':simple-item-decoration-1.0.0')
+    compile project(':miniequliazerlibrary-1.0.0')
+
 }
