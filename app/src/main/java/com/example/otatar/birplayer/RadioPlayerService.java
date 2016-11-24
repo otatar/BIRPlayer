@@ -7,6 +7,8 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
+import android.media.MediaFormat;
+import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
@@ -26,6 +28,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -380,6 +383,9 @@ public class RadioPlayerService extends Service {
                     refreshMetadata(radioStation.getListenUrl());
                 }
 
+                retrieveBitRate();
+
+
             }
         });
 
@@ -398,6 +404,9 @@ public class RadioPlayerService extends Service {
                     // stop buffering
                     Log.d(LOG_TAG, "Buffering stopped");
                     sendAlert(RadioPlayerFragment.SEND_BUFFERING, "stop");
+
+                } else if (what == MediaPlayer.MEDIA_INFO_METADATA_UPDATE){
+                    Log.d(LOG_TAG, "Meta data update");
                 }
                 return false;
             }
@@ -452,7 +461,7 @@ public class RadioPlayerService extends Service {
         Log.i(LOG_TAG, "startMediaPlayer");
 
         // If media player is pause or playing, just play
-        if (mpState == RadioPlayerService.MP_PAUSED || mpState == RadioPlayerService.MP_PLAYING) {
+        if (mpState == RadioPlayerService.MP_PAUSED) {
             // Play!!!
             mediaPlayer.start();
             radioStation.setPlaying(true);
@@ -463,6 +472,9 @@ public class RadioPlayerService extends Service {
             if (radioStation.getListenType().equals("0") || radioStation.getListenType().equals("1")) {
                 refreshMetadata(radioStation.getListenUrl());
             }
+
+        } else if (mpState == RadioPlayerService.MP_PLAYING) {
+            //We are already playing, well do nothing
 
         } else if (mpState == RadioPlayerService.MP_ERROR) {
 
@@ -529,6 +541,7 @@ public class RadioPlayerService extends Service {
 
         //Stop retrieving metadata from server
         if (retrieveTimer != null) {
+            Log.d(LOG_TAG, "Cancel metadata retriever");
             retrieveTimer.cancel();
         }
 
@@ -669,8 +682,7 @@ public class RadioPlayerService extends Service {
                         String songTitle = "";
                         String artistName = "";
                         try {
-                            songTitle = streamMeta.getTitle();
-                            artistName = streamMeta.getArtist();
+                            songTitle = streamMeta.getStreamTitle();
                         } catch (IOException e) {
                             Log.d(LOG_TAG, "No song title info!");
                             return;
@@ -678,8 +690,8 @@ public class RadioPlayerService extends Service {
 
                         //Send song title to RadioPlayer Fragment
                         if (songTitle.length() > 4) {
-                            Log.d(LOG_TAG, "Artist: " + artistName + ", song title: " + songTitle);
-                            sendAlert(RadioPlayerFragment.SEND_TITLE, artistName + " - " + songTitle);
+                            Log.d(LOG_TAG, "Current song: " + songTitle );
+                            sendAlert(RadioPlayerFragment.SEND_TITLE, songTitle);
                         }
                     }
                 }, 0, 1000);
@@ -692,4 +704,22 @@ public class RadioPlayerService extends Service {
     public static MediaPlayer getMediaPlayer() {
         return mediaPlayer;
     }
+
+    private void retrieveBitRate() {
+
+        HashMap<String, String> metadata = new HashMap<>();
+
+        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+        mediaMetadataRetriever.setDataSource(radioStation.getListenUrl(), metadata);
+
+        String bitrate = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+        Log.d(LOG_TAG, "Bitrate: " + bitrate);
+
+        sendAlert(RadioPlayerFragment.SEND_BITRATE, bitrate);
+
+
+    }
 }
+
+
+

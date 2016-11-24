@@ -2,10 +2,13 @@ package com.example.otatar.birplayer;
 
 
 import android.content.ComponentName;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.graphics.Color;
-import android.graphics.Paint;
+import android.graphics.drawable.AnimationDrawable;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -15,21 +18,34 @@ import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.pheelicks.visualizer.VisualizerView;
-import com.pheelicks.visualizer.renderer.BarGraphRenderer;
 
 import org.w3c.dom.Text;
 
-import es.claucookie.miniequalizerlibrary.EqualizerView;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Random;
+
+import me.itangqi.waveloadingview.WaveLoadingView;
 
 
 /**
@@ -46,6 +62,7 @@ public class RadioPlayerFragment extends Fragment {
     public static final String ACTION_START = "start";
     public static final String ACTION_STOP = "stop";
     public static final String ACTION_PAUSE = "pause";
+    public static final int SEND_BITRATE = 7;
     public static final int SEND_TITLE = 6;
     public static final int SEND_BUFFERING = 5;
     public static final int SEND_ERROR = 4;
@@ -79,11 +96,20 @@ public class RadioPlayerFragment extends Fragment {
     /* Reference to favorite check box */
     private CheckBox favoriteCheckBox;
 
-    /* Reference to progress_bar*/
-    private ProgressBar progressBar;
+    /* Reference to playing time text view */
+    private TextView playingTime;
 
-    /* Reference to visualizer view */
-    private com.pheelicks.visualizer.VisualizerView visualizerView;
+    /* Is paying time running */
+    private boolean payingTimeRunning;
+
+    /* Num of sec since playing */
+    private int playingSecs;
+
+    private int playingBitrate = 0;
+
+    private WaveLoadingView mWaveLoadingView;
+
+
 
 
 
@@ -114,16 +140,26 @@ public class RadioPlayerFragment extends Fragment {
      */
     class IncomingHandler extends Handler {
 
-        ProgressBar progressBar;
-
-        IncomingHandler(ProgressBar progressBar) {
-            this.progressBar = progressBar;
-        }
         @Override
         public void handleMessage(Message msg) {
             if(msg.what == UPDATE_STATUS)  {
                 Bundle bundle = msg.getData();
-                setStatusField(bundle.getString(STATUS));
+                setStatus(bundle.getString(STATUS));
+
+                if (bundle.getString(STATUS).equals(RadioPlayerService.MP_PLAYING)) {
+                    payingTimeRunning = true;
+                    mWaveLoadingView.setAmplitudeRatio(60);
+
+                } else if (bundle.getString(STATUS).equals(RadioPlayerService.MP_PAUSED)) {
+                    payingTimeRunning = false;
+                    mWaveLoadingView.setAmplitudeRatio(0);
+
+                } else {
+                    payingTimeRunning = false;
+                    playingSecs = 0;
+                    playingBitrate = 0;
+                    mWaveLoadingView.setAmplitudeRatio(0);
+                }
 
             } else if (msg.what == SEND_ERROR || msg.what == SEND_ALERT) {
                 //Inform user about that
@@ -132,13 +168,17 @@ public class RadioPlayerFragment extends Fragment {
 
             } else if (msg.what == SEND_BUFFERING) {
                 if(msg.getData().getString(EXTRA_PARAM).equals("start")) {
-                    progressBar.setVisibility(View.VISIBLE);
+                    setStatus("Buffering");
                 } else {
-                    progressBar.setVisibility(View.GONE);
+                   setStatus(RadioPlayerService.MP_PLAYING);
                 }
 
             } else if (msg.what == SEND_TITLE) {
-                setStatusField(msg.getData().getString(EXTRA_PARAM));
+                setStatus(msg.getData().getString(EXTRA_PARAM));
+
+            } else if (msg.what == SEND_BITRATE) {
+                playingBitrate = Integer.valueOf(msg.getData().getString(EXTRA_PARAM));
+
             }
         }
     }
@@ -150,6 +190,7 @@ public class RadioPlayerFragment extends Fragment {
         public void onServiceConnected(ComponentName name, IBinder service) {
 
             toServiceMessenger = new Messenger(service);
+            fromServiceMessenger = new Messenger(new IncomingHandler());
             bound = true;
             Log.d(LOG_TAG, "Connected to service: " + radioStation.getRadioStationName());
 
@@ -177,11 +218,18 @@ public class RadioPlayerFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        fromServiceMessenger = new Messenger(new IncomingHandler(progressBar));
-
-        /* Get RadioStaion object from fragments arguments */
+        /* Get RadioStation object from fragments arguments */
         radioStation = (RadioStation) getArguments().getSerializable(RADIO_STATION_OBJECT);
 
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        Intent intent = new Intent(getActivity(), RadioPlayerService.class);
+        getActivity().bindService(intent, serviceConnection, 0);
+        bound = true;
     }
 
     @Override
@@ -194,18 +242,18 @@ public class RadioPlayerFragment extends Fragment {
         TextView radioStationName = (TextView) v.findViewById(R.id.radio_name);
         TextView radioStationLocation = (TextView) v.findViewById(R.id.radio_location);
         TextView radioStationUrl = (TextView) v.findViewById(R.id.radio_url);
-        statusTextView = (TextView) v.findViewById(R.id.text_status);
+       // statusTextView = (TextView) v.findViewById(R.id.text_status);
         favoriteCheckBox = (CheckBox) v.findViewById(R.id.station_favorite);
-        progressBar = (ProgressBar) v.findViewById(R.id.progress_bar);
-        visualizerView = (VisualizerView) v.findViewById(R.id.visualizer_view);
+       // playingTime = (TextView) v.findViewById(R.id.playing_time);
+        mWaveLoadingView = (WaveLoadingView) v.findViewById(R.id.waveLoadingView);
 
         Button buttonPlay = (Button)v.findViewById(R.id.button_play);
         Button buttonPause = (Button)v.findViewById(R.id.button_pause);
         Button buttonStop = (Button)v.findViewById(R.id.button_stop);
 
-
-        // Incoming messenger
-        fromServiceMessenger = new Messenger(new IncomingHandler(progressBar));
+        //Run the playing timer handler
+        rumTimer();
+        animateWaveLoading();
 
         //Listener for play button
         buttonPlay.setOnClickListener(new View.OnClickListener() {
@@ -269,12 +317,16 @@ public class RadioPlayerFragment extends Fragment {
         //Set favorite check box
         favoriteCheckBox.setChecked(radioStation.getFavorite());
 
+
+
         return v;
     }
 
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
         super.setUserVisibleHint(isVisibleToUser);
+
+        Log.d(LOG_TAG, "setUserVisibleHint");
 
         if (isVisibleToUser){
             //Bind to service
@@ -289,8 +341,10 @@ public class RadioPlayerFragment extends Fragment {
     }
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
+    public void onPause() {
+        super.onPause();
+        Log.d(LOG_TAG, "onPause");
+
         if (bound) {
             getActivity().unbindService(serviceConnection);
             bound = false;
@@ -298,7 +352,7 @@ public class RadioPlayerFragment extends Fragment {
     }
 
     //Changing status
-    protected void setStatusField(String statusText) {
+    protected void setStatus(String statusText) {
 
             String status;
 
@@ -320,28 +374,22 @@ public class RadioPlayerFragment extends Fragment {
                     break;
                 case RadioPlayerService.MP_PLAYING:
                     status = "Playing...";
-                    visualizerView.link(RadioPlayerService.getMediaPlayer());
-
-                    Paint paint = new Paint();
-                    paint.setStrokeWidth(50f);
-                    paint.setAntiAlias(true);
-                    paint.setColor(Color.argb(200, 56, 138, 252));
-                    BarGraphRenderer barGraphRendererBottom = new BarGraphRenderer(16, paint, false);
-                    visualizerView.addRenderer(barGraphRendererBottom);
-
                     break;
                 case RadioPlayerService.MP_STOPPED:
                     status = "Stopped";
-                    visualizerView.release();
-                    progressBar.setVisibility(View.GONE);
                     break;
                 case RadioPlayerService.MP_PAUSED:
                     status = "Paused";
                     break;
+                case "Buffering":
+                    status = "Buffering...";
+                    break;
                 default:
-                    status = statusText;
+                    status = "Playing...";
+                    setSongTitle(statusText);
+
             }
-            statusTextView.setText(status);
+            mWaveLoadingView.setTopTitle(status);
     }
 
     /**
@@ -391,13 +439,100 @@ public class RadioPlayerFragment extends Fragment {
         }
     }
 
-    public static String sec2min(int sec) {
+    /**
+     * Timer for displaying playing time
+     */
+    private void rumTimer() {
 
-        int hour = sec / 3600;
-        int min = (sec % 3600) / 60;
-        int res_sec = (sec % 3600) % 60;
+        // Handler
+        final Handler handler = new Handler();
 
-        return String.format("%02d", hour) + ":" + String.format("%02d", min) + ":" + String.format("%02d", res_sec);
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                int hour = playingSecs / 3600;
+                int min = (playingSecs % 3600) / 60;
+                int res_sec = playingSecs % 60;
+
+                String time = String.format("%02d:%02d:%02d", hour, min, res_sec);
+                if (playingBitrate != 0) {
+                    mWaveLoadingView.setBottomTitle(time + " \n" + playingBitrate/1000 + " kb/s");
+                } else {
+                    mWaveLoadingView.setBottomTitle(time);
+                }
+                //playingTime.setText(time);
+
+                if (payingTimeRunning) {
+                    playingSecs++;
+                }
+
+                handler.postDelayed(this, 1000);
+            }
+        });
+
+    }
+
+    private void animateWaveLoading() {
+
+        // Handler
+        final Handler handler = new Handler();
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+
+                if (payingTimeRunning) {
+
+                    Random generator = new Random();
+                    int i = generator.nextInt(10) + 1;
+
+                    mWaveLoadingView.setAmplitudeRatio(60 + i);
+                    mWaveLoadingView.setProgressValue(60 + i);
+
+                }
+
+                handler.postDelayed(this, 1000);
+            }
+        });
+
+    }
+
+
+    private void startVisualizer(){
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                BufferedInputStream in = null;
+
+                try {
+                    URL url = new URL(radioStation.getListenUrl());
+
+                    InputStream inputStream = url.openStream();
+                    in = new BufferedInputStream(inputStream);
+
+                    byte[] data = new byte[100];
+
+                    while ((in.read(data)) != -1) {
+                        //horizon.updateView(data);
+
+                    }
+
+
+                }catch (IOException e) {
+                    Log.d(LOG_TAG, "Exception");
+                }
+
+            }
+        }).start();
+
+    }
+
+
+    private void setSongTitle(String songTitle) {
+
+        mWaveLoadingView.setCenterTitle(songTitle);
 
     }
 

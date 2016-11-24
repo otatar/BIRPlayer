@@ -26,6 +26,9 @@
     <string name="streaming_server_lost_conn">Greška: Izgubljena konekcija sa streaming serverom</string>
     <string name="search">Pretraga</string>
     <string name="clear">Obriši</string>
+    <string name="tab_radio_station_list">Radio Stanice</string>
+    <string name="tab_now_playing">Sada svira</string>
+    <string name="no_radio_station_selected">Nije izabrana radio stanica!</string>
 
     <string-array name="drawer_items">
         <item>Sve radio stanice</item>

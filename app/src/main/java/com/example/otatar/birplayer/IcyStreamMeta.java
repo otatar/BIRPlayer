@@ -73,6 +73,7 @@ public class IcyStreamMeta {
         return artist.trim();
     }
 
+
     public Map<String, String> getMetadata() throws IOException {
         if (metadata == null) {
             refreshMeta();

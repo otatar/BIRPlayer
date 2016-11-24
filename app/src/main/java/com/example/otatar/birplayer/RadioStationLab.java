@@ -23,8 +23,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
@@ -51,6 +53,13 @@ public class RadioStationLab {
 
     public static final String[] radioGenrePop = {"pop", "zabavna"};
     public static final String[] radioGenreFolk = {"folk", "narodna"};
+
+    /* Array list that contains all radio station objects */
+    public static ArrayList<RadioStation> radioStationsAll = new ArrayList<>();
+
+    // Last time we refreshed radio station from server
+    private static long lastRefreshTimestamp;
+
 
 
     /**
@@ -263,26 +272,35 @@ public class RadioStationLab {
 
         @Override
         protected String doInBackground(String... params) {
-            try {
-                //Fetch radio station data from server
-                Log.d(LOG_TAG, "Server: " + params[0]);
-                jsonString = fetchHttp(params[0]);
 
-                //Parse and insert into database
-                insertRadioStations(jsonString);
+           //Refresh radio station if it was over half an hour since last refresh
+           if ((System.currentTimeMillis()/1000 - lastRefreshTimestamp) > 1800) {
+               try {
+                   //Fetch radio station data from server
+                   Log.d(LOG_TAG, "Server: " + params[0]);
+                   jsonString = fetchHttp(params[0]);
+
+                   //Parse and insert into database
+                   insertRadioStations(jsonString);
+
+                   //We have refreshed
+                   lastRefreshTimestamp = System.currentTimeMillis()/1000;
 
 
-            } catch (IOException e) {
-                Log.e(LOG_TAG, "Cannot load data from server: " + e.toString());
-                jsonString = e.toString();
-            } catch (JSONException e) {
-                Log.e(LOG_TAG, e.toString());
-                jsonString = e.toString();
-            }
+               } catch (IOException e) {
+                   Log.e(LOG_TAG, "Cannot load data from server: " + e.toString());
+                   jsonString = e.toString();
+               } catch (JSONException e) {
+                   Log.e(LOG_TAG, e.toString());
+                   jsonString = e.toString();
+               }
+           }
 
             //Load from database in ArrayList
             MainActivity.radioStationsAll.clear();
+            RadioStationLab.radioStationsAll.clear();
             MainActivity.radioStationsAll.addAll(getRadioStationsDB());
+            RadioStationLab.radioStationsAll.addAll(getRadioStationsDB());
 
             return jsonString;
         }
@@ -309,7 +327,6 @@ public class RadioStationLab {
             try {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 InputStream in = connection.getInputStream();
-                Log.d(LOG_TAG, "Prošo");
 
                 if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
                     throw new IOException(connection.getResponseMessage() + ": with " + url);
@@ -379,9 +396,10 @@ public class RadioStationLab {
      *
      * @param genres
      */
-    public static void filterRadioStationsByGenre(String[] genres) {
+    public static ArrayList<RadioStation> filterRadioStationsByGenre(String[] genres) {
 
         Log.d(LOG_TAG, RadioStationLab.class + ":filterRadioStationByGenre");
+        ArrayList<RadioStation> list = new ArrayList<>();
 
         //Go through stations
         for (RadioStation radioStation : MainActivity.radioStationsAll) {
@@ -390,11 +408,13 @@ public class RadioStationLab {
             for (String genre : radioStation.getRadioStationGenre().split(",")) {
                 //If there is a match, add radio station to list
                 if (Arrays.asList(genres).contains(genre.toLowerCase())) {
-                    MainActivity.radioStationsPartial.add(radioStation);
+                    list.add(radioStation);
                 }
 
             }
         }
+
+        return list;
     }
 
 
@@ -403,58 +423,66 @@ public class RadioStationLab {
      *
      * @param location
      */
-    public static void filterRadioStationsByLocation(String location) {
+    public static ArrayList<RadioStation> filterRadioStationsByLocation(String location) {
 
         Log.d(LOG_TAG, RadioStationLab.class + ":filterRadioStationByLocation");
+        ArrayList<RadioStation> list = new ArrayList<>();
 
         //Go through stations
         for (RadioStation radioStation : MainActivity.radioStationsAll) {
 
             if (radioStation.getRadioStationLocation().equals(location)) {
-                MainActivity.radioStationsPartial.add(radioStation);
+                list.add(radioStation);
             }
         }
 
+        return list;
     }
 
     /**
      * Filters list of all radio stations for favorite radio stations
      */
-    public static void filterRadioStationByFavorite() {
+    public static ArrayList<RadioStation> filterRadioStationByFavorite() {
 
         Log.d(LOG_TAG, RadioStationLab.class + ":filterRadioStationByFavorite");
+        ArrayList<RadioStation> list = new ArrayList<>();
 
         //Go through stations
         for (RadioStation radioStation : MainActivity.radioStationsAll) {
 
             if (radioStation.getFavorite().equals(true)) {
-                MainActivity.radioStationsPartial.add(radioStation);
+                list.add(radioStation);
             }
         }
 
+        return list;
     }
 
     /**
      * Filters list of all radio stations by name
      * @param name
      */
-    public static void filterRadioStationByName(String name) {
+    public static ArrayList<RadioStation> filterRadioStationByName(String name) {
 
         Log.d(LOG_TAG, RadioStationLab.class + ":filterRadioStationByName");
-
+        ArrayList<RadioStation> list = new ArrayList<>();
 
         //Go through stations
         for (RadioStation radioStation : MainActivity.radioStationsAll) {
 
             if (radioStation.getRadioStationName().toLowerCase().contains(name.toLowerCase())) {
-                MainActivity.radioStationsPartial.add(radioStation);
+                list.add(radioStation);
             }
 
         }
 
+        return list;
     }
 
 
+    public static ArrayList<RadioStation> getRadioStationsAll() {
+        return radioStationsAll;
+    }
 }
 
 
