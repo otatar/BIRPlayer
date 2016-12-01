@@ -81,6 +81,9 @@ public class RadioStationListFragment extends Fragment {
     /* Container Activity */
     private OnRadioStationSelectedListener containerActivity;
 
+    /* */
+    public static int list_type = 0;
+
 
     /**
      * Interface implemented by container activity
@@ -295,11 +298,19 @@ public class RadioStationListFragment extends Fragment {
             });
         }
 
+
         radioStationsList.clear();
         radioStationsList.addAll(RadioStationLab.getRadioStationsAll());
+        radioStationAdapter = new RadioStationAdapter(getActivity(), radioStationsList);
+
+        //If the list is partial
+        if (list_type != 0) {
+            filterRadioStations(list_type);
+            radioStationAdapter.notifyDataSetChanged();
+        }
+
         //Setting up recycler view
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        radioStationAdapter = new RadioStationAdapter(getActivity(), radioStationsList);
         // Setting list divider
         Drawable dividerDrawable = ContextCompat.getDrawable(getActivity(), android.R.drawable.divider_horizontal_textfield);
         recyclerView.addItemDecoration(new DividerItemDecoration(dividerDrawable));
@@ -338,14 +349,14 @@ public class RadioStationListFragment extends Fragment {
                 case 0:
                     //All, show all radio stations
                     radioStationsList.clear();
-                    radioStationsList = RadioStationLab.getRadioStationsAll();
+                    radioStationsList.addAll(RadioStationLab.getRadioStationsAll());
                     radioStationAdapter.setRadioStationList(radioStationsList);
                     radioStationAdapter.notifyDataSetChanged();
                     break;
                 case 1:
                     //Favorite
                     radioStationsList.clear();
-                    radioStationsList = RadioStationLab.filterRadioStationByFavorite();
+                    radioStationsList.addAll(RadioStationLab.filterRadioStationByFavorite());
                     isRadioStationListPartial = true;
                     radioStationAdapter.setRadioStationList(radioStationsList);
                     radioStationAdapter.notifyDataSetChanged();
@@ -353,7 +364,7 @@ public class RadioStationListFragment extends Fragment {
                 case 2:
                     //Pop
                     radioStationsList.clear();
-                    radioStationsList = RadioStationLab.filterRadioStationsByGenre(RadioStationLab.radioGenrePop);
+                    radioStationsList.addAll(RadioStationLab.filterRadioStationsByGenre(RadioStationLab.radioGenrePop));
                     isRadioStationListPartial = true;
                     radioStationAdapter.setRadioStationList(radioStationsList);
                     radioStationAdapter.notifyDataSetChanged();
@@ -361,7 +372,7 @@ public class RadioStationListFragment extends Fragment {
                 case 3:
                     //Folk
                     radioStationsList.clear();
-                    radioStationsList = RadioStationLab.filterRadioStationsByGenre(RadioStationLab.radioGenreFolk);
+                    radioStationsList.addAll(RadioStationLab.filterRadioStationsByGenre(RadioStationLab.radioGenreFolk));
                     isRadioStationListPartial = true;
                     radioStationAdapter.setRadioStationList(radioStationsList);
                     radioStationAdapter.notifyDataSetChanged();
@@ -369,7 +380,7 @@ public class RadioStationListFragment extends Fragment {
                 case 4:
                     //Location
                     radioStationsList.clear();
-                    radioStationsList = RadioStationLab.filterRadioStationsByLocation("Sarajevo");
+                    radioStationsList.addAll(RadioStationLab.filterRadioStationsByLocation("Sarajevo"));
                     isRadioStationListPartial = true;
                     radioStationAdapter.setRadioStationList(radioStationsList);
                     radioStationAdapter.notifyDataSetChanged();
@@ -378,6 +389,9 @@ public class RadioStationListFragment extends Fragment {
                     //Do nothing
 
             }
+
+            //Set list type
+            list_type = type;
 
     }
 

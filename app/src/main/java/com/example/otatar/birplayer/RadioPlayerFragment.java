@@ -2,13 +2,8 @@ package com.example.otatar.birplayer;
 
 
 import android.content.ComponentName;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.graphics.drawable.AnimationDrawable;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -18,31 +13,19 @@ import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 
-import org.w3c.dom.Text;
-
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Random;
 
 import me.itangqi.waveloadingview.WaveLoadingView;
@@ -62,6 +45,7 @@ public class RadioPlayerFragment extends Fragment {
     public static final String ACTION_START = "start";
     public static final String ACTION_STOP = "stop";
     public static final String ACTION_PAUSE = "pause";
+    public static final int SEND_TIME = 8;
     public static final int SEND_BITRATE = 7;
     public static final int SEND_TITLE = 6;
     public static final int SEND_BUFFERING = 5;
@@ -100,7 +84,7 @@ public class RadioPlayerFragment extends Fragment {
     private TextView playingTime;
 
     /* Is paying time running */
-    private boolean payingTimeRunning;
+    private boolean playingTimeRunning;
 
     /* Num of sec since playing */
     private int playingSecs;
@@ -142,20 +126,23 @@ public class RadioPlayerFragment extends Fragment {
 
         @Override
         public void handleMessage(Message msg) {
+
+            Log.d(LOG_TAG, "RadioPlayerFragment:handleMessage()");
+
             if(msg.what == UPDATE_STATUS)  {
                 Bundle bundle = msg.getData();
                 setStatus(bundle.getString(STATUS));
 
                 if (bundle.getString(STATUS).equals(RadioPlayerService.MP_PLAYING)) {
-                    payingTimeRunning = true;
+                    playingTimeRunning = true;
                     mWaveLoadingView.setAmplitudeRatio(60);
 
                 } else if (bundle.getString(STATUS).equals(RadioPlayerService.MP_PAUSED)) {
-                    payingTimeRunning = false;
+                    playingTimeRunning = false;
                     mWaveLoadingView.setAmplitudeRatio(0);
 
                 } else {
-                    payingTimeRunning = false;
+                    playingTimeRunning = false;
                     playingSecs = 0;
                     playingBitrate = 0;
                     mWaveLoadingView.setAmplitudeRatio(0);
@@ -179,6 +166,9 @@ public class RadioPlayerFragment extends Fragment {
             } else if (msg.what == SEND_BITRATE) {
                 playingBitrate = Integer.valueOf(msg.getData().getString(EXTRA_PARAM));
 
+            } else if (msg.what == SEND_TIME) {
+                Log.d(LOG_TAG, "Received time: " + msg.getData().getString(EXTRA_PARAM));
+                playingSecs = Integer.parseInt(msg.getData().getString(EXTRA_PARAM));
             }
         }
     }
@@ -227,6 +217,7 @@ public class RadioPlayerFragment extends Fragment {
     public void onResume() {
         super.onResume();
 
+        //Bind to service
         Intent intent = new Intent(getActivity(), RadioPlayerService.class);
         getActivity().bindService(intent, serviceConnection, 0);
         bound = true;
@@ -252,7 +243,7 @@ public class RadioPlayerFragment extends Fragment {
         Button buttonStop = (Button)v.findViewById(R.id.button_stop);
 
         //Run the playing timer handler
-        rumTimer();
+        runTimer();
         animateWaveLoading();
 
         //Listener for play button
@@ -442,7 +433,7 @@ public class RadioPlayerFragment extends Fragment {
     /**
      * Timer for displaying playing time
      */
-    private void rumTimer() {
+    private void runTimer() {
 
         // Handler
         final Handler handler = new Handler();
@@ -462,7 +453,7 @@ public class RadioPlayerFragment extends Fragment {
                 }
                 //playingTime.setText(time);
 
-                if (payingTimeRunning) {
+                if (playingTimeRunning) {
                     playingSecs++;
                 }
 
@@ -481,7 +472,7 @@ public class RadioPlayerFragment extends Fragment {
             @Override
             public void run() {
 
-                if (payingTimeRunning) {
+                if (playingTimeRunning) {
 
                     Random generator = new Random();
                     int i = generator.nextInt(10) + 1;

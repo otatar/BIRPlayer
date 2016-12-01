@@ -117,12 +117,23 @@ public class RadioPlayerService extends Service {
     public static final String MP_INIT = "com.example.otatar.birplayer.radioplayerservice.init";
 
     /**
+     * Constant for intents extra
+     */
+    public static final String NOTIFY_RADIO_STATION = "com.example.otatar.birplayer.NOTIFY_RADIO_STATION";
+
+    /**
      * Variable to track MediaPlayer state
      */
     private String mpState = this.MP_NOT_READY;
 
     // Static variable to hold reference to self (singleton)
     public static RadioPlayerService radioPlayerService;
+
+    /* Is paying time running */
+    private boolean playingTimeRunning;
+
+    /* Num of sec since playing */
+    private int playingSecs;
 
 
     //Constructor (private - singleton)
@@ -134,6 +145,7 @@ public class RadioPlayerService extends Service {
 
     /**
      * Returns signle instance of RadioPlayerService class (singleton)
+     *
      * @return
      */
     public static RadioPlayerService getRadioPlayerService() {
@@ -169,6 +181,14 @@ public class RadioPlayerService extends Service {
                 if (isRunning) {
                     //Send media player state to UI
                     sendStatus();
+                    //Send playing time
+                    sendAlert(RadioPlayerFragment.SEND_TIME, String.valueOf(playingSecs));
+                    //Send bitrate
+                    if (playingTimeRunning) {
+                        retrieveBitRate();
+                    }
+
+
                 }
 
             } else if (msg.what == RadioPlayerFragment.SEND_ACTION) {
@@ -197,6 +217,7 @@ public class RadioPlayerService extends Service {
 
     /**
      * Returns new intent that starts service
+     *
      * @param context
      * @return intent that starts service
      */
@@ -262,12 +283,14 @@ public class RadioPlayerService extends Service {
     }
 
 
-
     @Override
     public void onCreate() {
         super.onCreate();
 
         Log.d(LOG_TAG, "Service created");
+
+        //Run Timer
+        runTimer();
 
         //Acquire wake lock (we want to ensure that CPU is running when we play media)
         mediaPlayer.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK);
@@ -320,14 +343,14 @@ public class RadioPlayerService extends Service {
             @Override
             public boolean onError(MediaPlayer mp, int what, int extra) {
 
-                if(what == mediaPlayer.MEDIA_ERROR_UNKNOWN) {
+                if (what == mediaPlayer.MEDIA_ERROR_UNKNOWN) {
                     Log.d(LOG_TAG, "Unknown error");
                     setMPState(RadioPlayerService.MP_ERROR);
                     sendStatus();
                     //Send alert
                     sendAlert(RadioPlayerFragment.SEND_ERROR, getResources().getString(R.string.streaming_server_unreachable));
 
-                } else if(what == mediaPlayer.MEDIA_ERROR_SERVER_DIED) {
+                } else if (what == mediaPlayer.MEDIA_ERROR_SERVER_DIED) {
                     Log.d(LOG_TAG, "Lost connection to streaming server");
                     setMPState(RadioPlayerService.MP_LOST_CONNECTION);
                     sendStatus();
@@ -370,6 +393,7 @@ public class RadioPlayerService extends Service {
                 // Play!!!
                 mediaPlayer.start();
                 radioStation.setPlaying(true);
+                playingTimeRunning = true;
 
                 /* If we are connected over WiFi, acquire a WiFi lock */
                 if (MainActivity.internetConnection == NetworkUtil.TYPE_WIFI) {
@@ -405,7 +429,7 @@ public class RadioPlayerService extends Service {
                     Log.d(LOG_TAG, "Buffering stopped");
                     sendAlert(RadioPlayerFragment.SEND_BUFFERING, "stop");
 
-                } else if (what == MediaPlayer.MEDIA_INFO_METADATA_UPDATE){
+                } else if (what == MediaPlayer.MEDIA_INFO_METADATA_UPDATE) {
                     Log.d(LOG_TAG, "Meta data update");
                 }
                 return false;
@@ -465,6 +489,7 @@ public class RadioPlayerService extends Service {
             // Play!!!
             mediaPlayer.start();
             radioStation.setPlaying(true);
+            playingTimeRunning = true;
             setMPState(RadioPlayerService.MP_PLAYING);
             sendStatus();
 
@@ -502,6 +527,7 @@ public class RadioPlayerService extends Service {
             setMPState(RadioPlayerService.MP_PAUSED);
             sendStatus();
             radioStation.setPlaying(false);
+            playingTimeRunning = false;
 
             //Stop retrieving meta data from server
             if (radioStation.getListenType().equals("0") || radioStation.getListenType().equals("1")) {
@@ -521,6 +547,8 @@ public class RadioPlayerService extends Service {
         if ((mpState == RadioPlayerService.MP_PAUSED) || (mpState == RadioPlayerService.MP_PLAYING)) {
             mediaPlayer.stop();
             mediaPlayer.reset();
+            playingTimeRunning = false;
+            playingSecs = 0;
             setMPState(RadioPlayerService.MP_STOPPED);
             sendStatus();
 
@@ -528,14 +556,14 @@ public class RadioPlayerService extends Service {
             serviceStopForeground();
 
         } else {
-             //If media player is in other state, reset it
+            //If media player is in other state, reset it
             mediaPlayer.reset();
             setMPState(RadioPlayerService.MP_NOT_READY);
             sendStatus();
         }
 
         //Release WiFi lock
-        if(wiFiLock.isHeld()) {
+        if (wiFiLock.isHeld()) {
             wiFiLock.release();
         }
 
@@ -581,6 +609,7 @@ public class RadioPlayerService extends Service {
 
     /**
      * Send error to UI thread via messenger
+     *
      * @param alert
      */
     private void sendAlert(int type, String alert) {
@@ -604,10 +633,15 @@ public class RadioPlayerService extends Service {
      */
     private void serviceStartForeground() {
 
+        //Main intent
+        Intent intent = new Intent(getApplicationContext(), Main2Activity.class)
+                .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.setAction(Intent.ACTION_RUN);
+        intent.putExtra(RadioPlayerService.NOTIFY_RADIO_STATION, radioStation);
+
         //Pending intent
         PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0,
-                new Intent(getApplicationContext(), NowPlayingActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP),
-                PendingIntent.FLAG_UPDATE_CURRENT);
+                intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         // Intents for action keys
         Intent playIntent = new Intent(this, RadioPlayerService.class);
@@ -652,8 +686,10 @@ public class RadioPlayerService extends Service {
         }
     }
 
+
     /**
      * Try to retrieve metadata from shoutcast/icecast server
+     *
      * @param url
      */
     private void refreshMetadata(String url) {
@@ -669,7 +705,6 @@ public class RadioPlayerService extends Service {
             Log.w(LOG_TAG, "Malformed URL: " + url);
             return;
         }
-
 
         new Thread(new Runnable() {
             @Override
@@ -690,7 +725,7 @@ public class RadioPlayerService extends Service {
 
                         //Send song title to RadioPlayer Fragment
                         if (songTitle.length() > 4) {
-                            Log.d(LOG_TAG, "Current song: " + songTitle );
+                            Log.d(LOG_TAG, "Current song: " + songTitle);
                             sendAlert(RadioPlayerFragment.SEND_TITLE, songTitle);
                         }
                     }
@@ -701,16 +736,23 @@ public class RadioPlayerService extends Service {
 
     }
 
+
     public static MediaPlayer getMediaPlayer() {
         return mediaPlayer;
     }
 
+
+    /**
+     * Retrieve bitrate of the listening stream using MediaMetadataRetriever
+     */
     private void retrieveBitRate() {
 
         HashMap<String, String> metadata = new HashMap<>();
 
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
         mediaMetadataRetriever.setDataSource(radioStation.getListenUrl(), metadata);
+        //mediaMetadataRetriever.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL, metadata);
+
 
         String bitrate = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
         Log.d(LOG_TAG, "Bitrate: " + bitrate);
@@ -719,6 +761,35 @@ public class RadioPlayerService extends Service {
 
 
     }
+
+
+    /**
+     * Timer for displaying playing time
+     */
+    private void runTimer() {
+
+        // Handler
+        final Handler handler = new Handler();
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                int hour = playingSecs / 3600;
+                int min = (playingSecs % 3600) / 60;
+                int res_sec = playingSecs % 60;
+
+                String time = String.format("%02d:%02d:%02d", hour, min, res_sec);
+
+                if (playingTimeRunning) {
+                    playingSecs++;
+                }
+
+                handler.postDelayed(this, 1000);
+            }
+        });
+
+    }
+
 }
 
 

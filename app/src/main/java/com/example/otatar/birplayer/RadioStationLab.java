@@ -119,6 +119,8 @@ public class RadioStationLab {
      */
     private void insertRadioStations(String jsonString) throws IOException, JSONException {
 
+        Log.d(LOG_TAG, "insertRadioStations()");
+
         //Parsing json
         JSONObject jsonBody = new JSONObject(jsonString);
 
@@ -188,8 +190,8 @@ public class RadioStationLab {
             super.onPostExecute(radioStations);
 
             /* Add stations to list*/
-            MainActivity.radioStationsAll.clear();
-            MainActivity.radioStationsAll.addAll(radioStations);
+            RadioStationLab.radioStationsAll.clear();
+            RadioStationLab.radioStationsAll.addAll(radioStations);
             //Inform about new list
             //radioStationRefreshable.onRadioStationRefreshed();
 
@@ -297,9 +299,7 @@ public class RadioStationLab {
            }
 
             //Load from database in ArrayList
-            MainActivity.radioStationsAll.clear();
             RadioStationLab.radioStationsAll.clear();
-            MainActivity.radioStationsAll.addAll(getRadioStationsDB());
             RadioStationLab.radioStationsAll.addAll(getRadioStationsDB());
 
             return jsonString;
@@ -402,7 +402,7 @@ public class RadioStationLab {
         ArrayList<RadioStation> list = new ArrayList<>();
 
         //Go through stations
-        for (RadioStation radioStation : MainActivity.radioStationsAll) {
+        for (RadioStation radioStation : RadioStationLab.radioStationsAll) {
 
             //Split genres
             for (String genre : radioStation.getRadioStationGenre().split(",")) {
@@ -429,7 +429,7 @@ public class RadioStationLab {
         ArrayList<RadioStation> list = new ArrayList<>();
 
         //Go through stations
-        for (RadioStation radioStation : MainActivity.radioStationsAll) {
+        for (RadioStation radioStation : RadioStationLab.radioStationsAll) {
 
             if (radioStation.getRadioStationLocation().equals(location)) {
                 list.add(radioStation);
@@ -448,7 +448,7 @@ public class RadioStationLab {
         ArrayList<RadioStation> list = new ArrayList<>();
 
         //Go through stations
-        for (RadioStation radioStation : MainActivity.radioStationsAll) {
+        for (RadioStation radioStation : RadioStationLab.radioStationsAll) {
 
             if (radioStation.getFavorite().equals(true)) {
                 list.add(radioStation);
@@ -468,7 +468,7 @@ public class RadioStationLab {
         ArrayList<RadioStation> list = new ArrayList<>();
 
         //Go through stations
-        for (RadioStation radioStation : MainActivity.radioStationsAll) {
+        for (RadioStation radioStation : RadioStationLab.radioStationsAll) {
 
             if (radioStation.getRadioStationName().toLowerCase().contains(name.toLowerCase())) {
                 list.add(radioStation);
@@ -481,7 +481,7 @@ public class RadioStationLab {
 
 
     public static ArrayList<RadioStation> getRadioStationsAll() {
-        return radioStationsAll;
+        return RadioStationLab.radioStationsAll;
     }
 }
 

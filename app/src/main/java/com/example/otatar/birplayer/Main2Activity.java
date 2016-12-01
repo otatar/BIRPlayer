@@ -1,6 +1,7 @@
 package com.example.otatar.birplayer;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
@@ -24,6 +25,7 @@ import android.widget.FrameLayout;
 import android.widget.ListView;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 
 public class Main2Activity extends AppCompatActivity implements RadioStationListFragment.OnRadioStationSelectedListener {
 
@@ -69,6 +71,11 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         Log.d(LOG_TAG, "Selected radio station: " + radioStation.getRadioStationName());
         selectedRadioStation = radioStation;
 
+         /* Stop media player if it is playing */
+        Intent stopIntent = new Intent(this, RadioPlayerService.class);
+        stopIntent.setAction(RadioPlayerFragment.ACTION_STOP);
+        startService(stopIntent);
+
         //Start RadioPlayerFragment
         Fragment fragment = RadioPlayerFragment.newInstance(radioStation);
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
@@ -85,10 +92,8 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
 
-        // Check network connection and alter user about it
-        checkAndAlertNetworkConnection();
 
-        // Start service
+        // Start service, if it has't been started
         startService(RadioPlayerService.newStartIntent(this));
 
         /* Wiring up things */
@@ -99,7 +104,6 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         drawerList = (ListView) findViewById(R.id.list_view);
         //Frame layout
         frameLayout = (FrameLayout) findViewById(R.id.frame_layout);
-
 
         //From the top, create toolbar
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -223,11 +227,28 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
             }
         });
 
-        //Start the RadioStationListFragment
-        Fragment fragment = RadioStationListFragment.newInstance(true);
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        ft.add(R.id.frame_layout, fragment);
-        ft.commit();
+        //Get intent that started the activity
+        Intent intent = getIntent();
+        Log.d(LOG_TAG, "Intent action: " + intent.getAction());
+
+        if (intent.getAction().equals(Intent.ACTION_RUN)) {
+
+            //We have been started from notification, so fire up RadioPlayerFragment
+            selectedRadioStation = (RadioStation) intent.getSerializableExtra(RadioPlayerService.NOTIFY_RADIO_STATION);
+            changeTab();
+
+        } else {
+
+            //Whe have been started by the launcher, so start the RadioStationListFragment
+
+            // Check network connection and alter user about it
+            checkAndAlertNetworkConnection();
+
+            Fragment fragment = RadioStationListFragment.newInstance(true);
+            FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+            ft.add(R.id.frame_layout, fragment);
+            ft.commit();
+        }
 
     }
 
@@ -313,6 +334,8 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         searchView.clearFocus();
         return super.dispatchTouchEvent(ev);
     }
+
+
 
     /**
      * Checks network connection and alerts user about that
