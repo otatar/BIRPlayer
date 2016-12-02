@@ -53,6 +53,9 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
     //Search view
     private SearchView searchView;
 
+    //Toolbar
+    private Toolbar toolbar;
+
     //RadioStationFragment
     private RadioStationListFragment currentFragment;
 
@@ -80,6 +83,7 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         Fragment fragment = RadioPlayerFragment.newInstance(radioStation);
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         ft.replace(R.id.frame_layout, fragment);
+        ft.setCustomAnimations(R.anim.anim_slide_in_right, R.anim.anim_slide_out_left);
         ft.commit();
 
         //Change tab
@@ -106,7 +110,7 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         frameLayout = (FrameLayout) findViewById(R.id.frame_layout);
 
         //From the top, create toolbar
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDefaultDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -333,6 +337,19 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
     public boolean dispatchTouchEvent(MotionEvent ev) {
         searchView.clearFocus();
         return super.dispatchTouchEvent(ev);
+    }
+
+
+    /**
+     * Setting activity's subtitle
+     * @param subtitle
+     */
+    public void setActivitySubtitle(String subtitle) {
+
+        Log.d(LOG_TAG, "setActivitySubtitle");
+
+        toolbar.setSubtitle(subtitle);
+
     }
 
 

@@ -3,15 +3,12 @@ package com.example.otatar.birplayer;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
@@ -20,7 +17,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import com.dgreenhalgh.android.simpleitemdecoration.linear.DividerItemDecoration;
@@ -79,7 +75,10 @@ public class RadioStationListFragment extends Fragment {
     String activityTitle;
 
     /* Container Activity */
-    private OnRadioStationSelectedListener containerActivity;
+    private Main2Activity containerActivity;
+
+    /* Radio Station selected listener */
+    private OnRadioStationSelectedListener radioStationSelectedListener;
 
     /* */
     public static int list_type = 0;
@@ -156,7 +155,7 @@ public class RadioStationListFragment extends Fragment {
 
             //searchView.clearFocus();
 
-            containerActivity.onRadioStationSelected(radioStationsList.get(getAdapterPosition()));
+            radioStationSelectedListener.onRadioStationSelected(radioStationsList.get(getAdapterPosition()));
 
         }
     }
@@ -393,6 +392,9 @@ public class RadioStationListFragment extends Fragment {
             //Set list type
             list_type = type;
 
+            //Set subtitle
+            containerActivity.setActivitySubtitle(getResources().getStringArray(R.array.drawer_items)[type]);
+
     }
 
 
@@ -400,10 +402,25 @@ public class RadioStationListFragment extends Fragment {
 
         Log.d(LOG_TAG, "filterRadioStationsByName()");
 
-        radioStationsList.clear();
+        /*radioStationsList.clear();
         radioStationsList = RadioStationLab.filterRadioStationByName(name);
         isRadioStationListPartial = true;
         radioStationAdapter.setRadioStationList(radioStationsList);
+        radioStationAdapter.notifyDataSetChanged();*/
+
+        ArrayList<RadioStation> list = new ArrayList<>();
+
+        //Go through stations
+        for (RadioStation radioStation : radioStationsList) {
+
+            if (radioStation.getRadioStationName().toLowerCase().contains(name.toLowerCase())) {
+                list.add(radioStation);
+            }
+
+        }
+
+        isRadioStationListPartial = true;
+        radioStationAdapter.setRadioStationList(list);
         radioStationAdapter.notifyDataSetChanged();
 
     }
@@ -421,7 +438,8 @@ public class RadioStationListFragment extends Fragment {
         // This makes sure that the container activity has implemented
         // the callback interface. If not, it throws an exception
         try {
-            containerActivity = (OnRadioStationSelectedListener) a;
+            radioStationSelectedListener = (OnRadioStationSelectedListener) a;
+            containerActivity = (Main2Activity) a;
         } catch (ClassCastException e) {
             throw new ClassCastException(a.toString()
                     + " must implement OnHeadlineSelectedListener");

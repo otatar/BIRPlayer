@@ -135,6 +135,9 @@ public class RadioPlayerService extends Service {
     /* Num of sec since playing */
     private int playingSecs;
 
+    /*BitRate*/
+    private String bitRate;
+
 
     //Constructor (private - singleton)
     public RadioPlayerService() {
@@ -184,8 +187,8 @@ public class RadioPlayerService extends Service {
                     //Send playing time
                     sendAlert(RadioPlayerFragment.SEND_TIME, String.valueOf(playingSecs));
                     //Send bitrate
-                    if (playingTimeRunning) {
-                        retrieveBitRate();
+                    if (bitRate != null) {
+                        sendAlert(RadioPlayerFragment.SEND_BITRATE, bitRate);
                     }
 
 
@@ -754,11 +757,10 @@ public class RadioPlayerService extends Service {
         //mediaMetadataRetriever.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL, metadata);
 
 
-        String bitrate = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
-        Log.d(LOG_TAG, "Bitrate: " + bitrate);
+        bitRate = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+        Log.d(LOG_TAG, "Bitrate: " + bitRate);
 
-        sendAlert(RadioPlayerFragment.SEND_BITRATE, bitrate);
-
+        sendAlert(RadioPlayerFragment.SEND_BITRATE, bitRate);
 
     }
 
