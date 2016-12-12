@@ -32,7 +32,7 @@
 
     <string-array name="drawer_items">
         <item>Sve radio stanice</item>
-        <item>Omiljene radio stanice</item>
+        <item>Omiljene</item>
         <item>Zabavna</item>
         <item>Narodna</item>
         <item>Sarajevo</item>

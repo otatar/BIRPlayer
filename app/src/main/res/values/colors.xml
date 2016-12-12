@@ -13,4 +13,6 @@
     <color name="default_timecode">#ddffffdd</color>
     <color name="default_background">#000000</color>
 
+    <color name="gradient_start_color">#0000ff</color>
+
 </resources>

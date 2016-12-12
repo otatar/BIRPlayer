@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer-array name="list_icons">
+        <item>@drawable/list_all_icon</item>
+        <item>@drawable/list_favorite_icon</item>
+        <item>@drawable/list_pop_icon</item>
+        <item>@drawable/list_folk_icon</item>
+        <item>@drawable/list_sarajevo_icon</item>
+    </integer-array>
+</resources>

@@ -2,10 +2,20 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
     android:background="@drawable/recycler_highlight"
-    android:padding="16dp"
-    android:baselineAligned="false">
+    android:baselineAligned="false"
+    android:orientation="horizontal"
+    android:padding="16dp">
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/list_play_icon" />
+    </RelativeLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -27,7 +37,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="start"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:paddingLeft="30dp"
+            android:paddingRight="10dp"
             android:text="Genre"
             android:textColor="@color/sub_text_color" />
 
@@ -42,35 +55,37 @@
 
     </LinearLayout>
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="2"
-        android:orientation="vertical">
+        android:layout_gravity="center_vertical"
+        android:orientation="horizontal">
 
         <CheckBox
             android:id="@+id/list_favorite"
             style="?android:attr/starStyle"
+            android:button="@drawable/btn_star_selector"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal" />
+            android:layout_gravity="center_vertical" />
 
-    </LinearLayout>
+    </RelativeLayout>
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="2"
         android:orientation="vertical">
-        
+
         <es.claucookie.miniequalizerlibrary.EqualizerView
             android:id="@+id/mini_equalizer"
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:layout_gravity="center_horizontal"
-            android:visibility="gone"/>
+            android:visibility="gone" />
 
-    </LinearLayout>
+    </RelativeLayout>
 
 
 </LinearLayout>

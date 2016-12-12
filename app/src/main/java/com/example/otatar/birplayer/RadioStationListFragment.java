@@ -3,6 +3,7 @@ package com.example.otatar.birplayer;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -27,6 +28,8 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 
 import es.claucookie.miniequalizerlibrary.EqualizerView;
+
+import static com.example.otatar.birplayer.R.drawable.recycler_list_divider;
 
 
 /**
@@ -274,6 +277,14 @@ public class RadioStationListFragment extends Fragment {
 
                                     }
                                 });
+                        // Changing action text color
+                        snackbar.setActionTextColor(Color.YELLOW);
+
+                        // Changing action button text color
+                        View sbView = snackbar.getView();
+                        TextView textView = (TextView) sbView.findViewById(android.support.design.R.id.snackbar_text);
+                        textView.setTextColor(Color.WHITE);
+
                         snackbar.show();
 
                     }
@@ -310,9 +321,11 @@ public class RadioStationListFragment extends Fragment {
 
         //Setting up recycler view
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+
         // Setting list divider
-        Drawable dividerDrawable = ContextCompat.getDrawable(getActivity(), android.R.drawable.divider_horizontal_textfield);
+        Drawable dividerDrawable = ContextCompat.getDrawable(getActivity(), recycler_list_divider);
         recyclerView.addItemDecoration(new DividerItemDecoration(dividerDrawable));
+
         //Setting adapter
         recyclerView.setAdapter(radioStationAdapter);
         recyclerView.setVisibility(View.VISIBLE);
@@ -345,6 +358,9 @@ public class RadioStationListFragment extends Fragment {
 
             switch (type) {
 
+                case -1:
+                    //Just return
+                    return;
                 case 0:
                     //All, show all radio stations
                     radioStationsList.clear();

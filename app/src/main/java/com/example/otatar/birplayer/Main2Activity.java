@@ -3,10 +3,13 @@ package com.example.otatar.birplayer;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.res.ResourcesCompat;
+import android.support.v4.content.res.TypedArrayUtils;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
@@ -21,6 +24,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ListView;
 
@@ -39,7 +43,7 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
     private DrawerLayout drawerLayout;
 
     //Drawer toggle
-    private ActionBarDrawerToggle actionBarDrawerToggle;
+    private StaticActionBarDrawerToggle actionBarDrawerToggle;
 
     //List View
     private ListView drawerList;
@@ -111,14 +115,23 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
         //From the top, create toolbar
         toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.main_color_drawable, null));
         setSupportActionBar(toolbar);
         getSupportActionBar().setDefaultDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        //Init nav drawer
-        drawerList.setAdapter(new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1,
-                getResources().getStringArray(R.array.drawer_items)));
+         //Init Navigation Drawer
+
+        // Drawer list icons
+        int[] arrayIcons = {
+                R.drawable.list_all_icon,
+                R.drawable.list_favorite_icon,
+                R.drawable.list_pop_icon,
+                R.drawable.list_folk_icon,
+                R.drawable.list_sarajevo_icon
+        };
+        drawerList.setAdapter(new CustomDrawerListAdapter(this, getResources().getStringArray(R.array.drawer_items),
+                arrayIcons));
 
         //Set listener for clicks on list
         drawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -137,14 +150,19 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
                 //Close drawer
                 drawerLayout.closeDrawer(drawerList);
-                //Filter list currentFragment
-               currentFragment.filterRadioStations(position);
+
+                //Filter list currentFragment (we have a header and it is index 0)
+                Log.d(LOG_TAG, "Clicked on position: " + (position - 1));
+               currentFragment.filterRadioStations(position - 1);
             }
 
         });
 
-        //Action bar drawer toggle
-        actionBarDrawerToggle = new ActionBarDrawerToggle(this, drawerLayout,
+        //Show list header
+        View drawerHeader = (View) getLayoutInflater().inflate(R.layout.drawer_header_view, null);
+        drawerList.addHeaderView(drawerHeader);
+
+        actionBarDrawerToggle = new StaticActionBarDrawerToggle(drawerLayout, toolbar, R.drawable.drawer_button_1,
                 R.string.open_drawer, R.string.close_drawer) {
 
             //Called on completely open state
@@ -162,6 +180,7 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
             }
 
         };
+
 
         //Add drawer toggle
         drawerLayout.addDrawerListener(actionBarDrawerToggle);
@@ -192,23 +211,14 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
                     ft.commit();
 
                 } else if (tab.getPosition() == 1) {
-                    //Start RadioPlayerFragment
+
                     if (selectedRadioStation == null) {
-                        AlertDialog.Builder builder1 = new AlertDialog.Builder(Main2Activity.this);
-                        builder1.setMessage(R.string.no_radio_station_selected)
-                                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                                            @Override
-                                            public void onClick(DialogInterface dialog, int which) {
-                                                changeTab();
-
-                                            }
-                                        }
-                                );
-
-                        AlertDialog dialog1 = builder1.create();
-                        dialog1.show();
+                        //No radio station selected, show dialog
+                        showAlertDialog(getResources().getString(R.string.no_radio_station_selected));
+                        changeTab();
 
                     } else {
+                        //Start RadioPlayerFragment
                         Fragment fragment = RadioPlayerFragment.newInstance(selectedRadioStation);
                         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                         ft.replace(R.id.frame_layout, fragment, "visible_fragment");
@@ -366,38 +376,13 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
             case NetworkUtil.TYPE_MOBILE:
                 //Alert user about connection with a dialog
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setMessage(R.string.mobile_connection_hint)
-                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-
-                                        //Start NowPlayingActivity
-                                        // Intent intent = new Intent(getApplicationContext(), NowPlayingActivity.class);
-                                        //startActivity(intent);
-
-                                    }
-                                }
-                        );
-
-                AlertDialog dialog = builder.create();
-                dialog.show();
+                showAlertDialog(getResources().getString(R.string.mobile_connection_hint));
                 break;
 
             case NetworkUtil.TYPE_NOT_CONNECTED:
                 //Alert user about connection with a dialog
-                AlertDialog.Builder builder1 = new AlertDialog.Builder(this);
-                builder1.setMessage(R.string.no_connection)
-                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
+                showAlertDialog(getResources().getString(R.string.no_connection));
 
-                                    }
-                                }
-                        );
-
-                AlertDialog dialog1 = builder1.create();
-                dialog1.show();
                 break;
 
         }
@@ -422,5 +407,25 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
             tab.select();
         }
 
+    }
+
+
+    private void showAlertDialog(String message) {
+
+        AlertDialog.Builder builder1 = new AlertDialog.Builder(this);
+        builder1.setMessage(message)
+                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                            }
+                        }
+                );
+
+        AlertDialog dialog1 = builder1.create();
+        dialog1.show();
+
+        Button dialogBtn =  dialog1.getButton(DialogInterface.BUTTON_POSITIVE);
+        dialogBtn.setTextColor(Color.BLUE);
     }
 }

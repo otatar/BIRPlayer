@@ -117,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
             super(itemView);
 
             listStationName = (TextView) itemView.findViewById(R.id.list_radio_name);
-            listStationGenre = (TextView) itemView.findViewById(R.id.list_radio_genre);
+            //listStationGenre = (TextView) itemView.findViewById(R.id.list_radio_genre);
             listStationLocation = (TextView) itemView.findViewById(R.id.list_radio_location);
             listFavorite = (CheckBox) itemView.findViewById(R.id.list_favorite);
             listEqualizer = (EqualizerView) itemView.findViewById(R.id.mini_equalizer);
@@ -134,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
             // Set the content of views
             listStationName.setText(radioStation.getRadioStationName());
             listStationLocation.setText(radioStation.getRadioStationLocation());
-            listStationGenre.setText(radioStation.getRadioStationGenre());
+            //listStationGenre.setText(radioStation.getRadioStationGenre());
             listFavorite.setChecked(radioStation.getFavorite());
             Log.d(LOG_TAG, "Radio: " + radioStation.getRadioStationName() + ": " + radioStation.getPlaying());
             if (radioStation.getPlaying()) {
