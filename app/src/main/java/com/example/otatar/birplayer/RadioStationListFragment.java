@@ -4,8 +4,11 @@ package com.example.otatar.birplayer;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -17,6 +20,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
@@ -67,7 +71,6 @@ public class RadioStationListFragment extends Fragment {
     /* Array list that contains all radio station objects */
     private ArrayList<RadioStation> radioStationsList = new ArrayList<>();
 
-
     /* Flag selector for list type */
     private Boolean isRadioStationListPartial = false;
 
@@ -86,12 +89,15 @@ public class RadioStationListFragment extends Fragment {
     /* */
     public static int list_type = 0;
 
+    /* Variable to track selected items in recycler view of stations*/
+    private static RadioStation selectedRadioStation = null;
+
 
     /**
      * Interface implemented by container activity
      */
     public interface OnRadioStationSelectedListener {
-        public void onRadioStationSelected(RadioStation radioStation);
+        public void onRadioStationSelected(int position, ArrayList<RadioStation> radioStationList);
     }
 
 
@@ -124,11 +130,19 @@ public class RadioStationListFragment extends Fragment {
 
             Log.d(LOG_TAG, getClass().getName() + ":bindRadioStation");
 
+
+            // Reset typeface
+            listStationName.setTypeface(null, Typeface.NORMAL);
+            listStationGenre.setTypeface(null, Typeface.NORMAL);
+            listStationLocation.setTypeface(null, Typeface.NORMAL);
+
             // Set the content of views
             listStationName.setText(radioStation.getRadioStationName());
             listStationLocation.setText(radioStation.getRadioStationLocation());
             listStationGenre.setText(radioStation.getRadioStationGenre());
             listFavorite.setChecked(radioStation.getFavorite());
+
+            //If we are playing this station
             Log.d(LOG_TAG, "Radio: " + radioStation.getRadioStationName() + ": " + radioStation.getPlaying());
             if (radioStation.getPlaying()) {
                 listEqualizer.animateBars();
@@ -136,6 +150,16 @@ public class RadioStationListFragment extends Fragment {
             } else {
                 listEqualizer.stopBars();
                 listEqualizer.setVisibility(View.GONE);
+            }
+
+            // If this station is selected
+            if (radioStation.getSelected()) {
+
+                Log.d(LOG_TAG, "Highlighting: " + listStationName.getText());
+                listStationName.setTypeface(null, Typeface.BOLD);
+                listStationGenre.setTypeface(null, Typeface.BOLD);
+                listStationLocation.setTypeface(null, Typeface.BOLD);
+
             }
 
             listFavorite.setOnClickListener(new View.OnClickListener() {
@@ -156,9 +180,8 @@ public class RadioStationListFragment extends Fragment {
             Log.d(LOG_TAG, "Clicked on: "+ listStationName.getText() +" at position " +
                     getAdapterPosition());
 
-            //searchView.clearFocus();
-
-            radioStationSelectedListener.onRadioStationSelected(radioStationsList.get(getAdapterPosition()));
+            //Call method on activity
+            radioStationSelectedListener.onRadioStationSelected(getAdapterPosition(), radioStationsList);
 
         }
     }
@@ -193,10 +216,27 @@ public class RadioStationListFragment extends Fragment {
         }
 
         @Override
-        public void onBindViewHolder(RadioStationHolder holder, int position) {
+        public void onBindViewHolder(final RadioStationHolder holder, final int position) {
 
-            RadioStation radioStation = radioStationList.get(position);
+            final RadioStation radioStation = radioStationList.get(position);
+
+            //Click listener
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    //Highlight selection
+                    selectedRadioStation = radioStation;
+                    notifyItemChanged(position);
+
+                    //Let the holder deal further with click
+                    holder.onClick(v);
+
+                }
+            });
+
             holder.bindRadioStation(radioStation);
+
         }
 
         @Override
@@ -211,14 +251,16 @@ public class RadioStationListFragment extends Fragment {
      * @param refresh
      * @return RadioStationListFragment
      */
-     public static RadioStationListFragment newInstance(Boolean refresh) {
+     public static RadioStationListFragment newInstance(Boolean refresh, RadioStation selectedRadioStation) {
 
-        Bundle args = new Bundle();
+         Bundle args = new Bundle();
          args.putBoolean("refresh", refresh);
+         args.putSerializable("radiostation", selectedRadioStation);
 
-        RadioStationListFragment fragment = new RadioStationListFragment();
-        fragment.setArguments(args);
-        return fragment;
+
+         RadioStationListFragment fragment = new RadioStationListFragment();
+         fragment.setArguments(args);
+         return fragment;
 
     }
 
@@ -228,6 +270,12 @@ public class RadioStationListFragment extends Fragment {
         // Required empty public constructor
     }
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        selectedRadioStation = (RadioStation) getArguments().getSerializable("radiostation");
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -267,25 +315,29 @@ public class RadioStationListFragment extends Fragment {
                     try {
                         JSONObject jsonObject = new JSONObject(s);
                     } catch (JSONException e) {
-                        //Notify user via snack bar
-                        Snackbar snackbar = Snackbar
-                                .make(v.findViewById(R.id.frame_fragment_layout),
-                                        getString(R.string.server_unreachable), Snackbar.LENGTH_INDEFINITE)
-                                .setAction(R.string.ok, new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
 
-                                    }
-                                });
-                        // Changing action text color
-                        snackbar.setActionTextColor(Color.YELLOW);
+                        if (getActivity() != null) {
+                            //Notify user via snack bar
+                            Snackbar snackbar = Snackbar
+                                    .make(v.findViewById(R.id.frame_fragment_layout),
+                                            getString(R.string.server_unreachable), Snackbar.LENGTH_INDEFINITE)
+                                    .setAction(R.string.ok, new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
 
-                        // Changing action button text color
-                        View sbView = snackbar.getView();
-                        TextView textView = (TextView) sbView.findViewById(android.support.design.R.id.snackbar_text);
-                        textView.setTextColor(Color.WHITE);
+                                        }
+                                    });
 
-                        snackbar.show();
+                            // Changing action text color
+                            snackbar.setActionTextColor(Color.YELLOW);
+
+                            // Changing action button text color
+                            View sbView = snackbar.getView();
+                            TextView textView = (TextView) sbView.findViewById(android.support.design.R.id.snackbar_text);
+                            textView.setTextColor(Color.WHITE);
+
+                            snackbar.show();
+                        }
 
                     }
                     radioStationsList.clear();
@@ -328,6 +380,7 @@ public class RadioStationListFragment extends Fragment {
 
         //Setting adapter
         recyclerView.setAdapter(radioStationAdapter);
+        ((LinearLayoutManager) recyclerView.getLayoutManager()).scrollToPosition(radioStationsList.indexOf(selectedRadioStation));
         recyclerView.setVisibility(View.VISIBLE);
 
         // Register listener for swipe refresh, refreshes radio list in background

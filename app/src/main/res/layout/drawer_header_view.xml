@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:padding="5dp"
     android:elevation="3dp"
-    android:background="@drawable/drawer_header_background">
+    android:background="@drawable/listbckg">
 
     <ImageView
         android:layout_width="wrap_content"

@@ -29,6 +29,11 @@
     <string name="tab_radio_station_list">Radio Stanice</string>
     <string name="tab_now_playing">Sada svira</string>
     <string name="no_radio_station_selected">Nije izabrana radio stanica!</string>
+    <string name="no_song_title">Naziv pjesme nepoznat</string>
+    <string name="status">Status</string>
+    <string name="radio_location">Location</string>
+    <string name="radio_station">Radio Station</string>
+    <string name="radio_url">URL</string>
 
     <string-array name="drawer_items">
         <item>Sve radio stanice</item>

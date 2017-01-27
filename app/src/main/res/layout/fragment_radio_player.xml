@@ -1,72 +1,127 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:gravity="center"
+    android:background="@drawable/background"
     android:orientation="vertical"
     tools:context=".RadioPlayerFragment">
 
 
     <LinearLayout
+        android:id="@+id/linear1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:id = "@+id/linear1">
+        android:layout_alignParentTop="true"
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/radio_name"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="20dp"/>
+            android:layout_weight="1">
+        </LinearLayout>
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/radio_location"
-            android:layout_gravity="center_horizontal"/>
+            android:layout_weight="0"
+            android:orientation="vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/radio_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="20dp"
+                android:text="@string/radio_station"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <TextView
+                android:id="@+id/radio_location"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="@string/radio_location" />
+
+            <TextView
+                android:id="@+id/radio_url"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="@string/radio_url" />
+
+            <CheckBox
+                android:id="@+id/station_favorite"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:button="@drawable/btn_star_selector"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/radio_url"
-            android:layout_gravity="center_horizontal"/>
+            android:layout_weight="1">
+        </LinearLayout>
 
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/linear2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:id = "@+id/linear2">
+        android:layout_weight="0"
+        android:background="@drawable/main_color_drawable_contr"
+        android:elevation="10dp"
+        android:gravity="center"
+        android:orientation="vertical">
 
-        <!--  <TextView
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:id="@+id/text_status"
-              android:textAppearance="?android:attr/textAppearanceMedium"
-              android:layout_gravity="center_horizontal"
-              android:layout_marginTop="20dp"
-              android:text="Status"/> -->
 
-        <CheckBox
-            android:id="@+id/station_favorite"
+        <TextView
+            android:id="@+id/text_status"
+            style="@style/shadowEffect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            style="?android:attr/starStyle"
-            android:layout_gravity="center_horizontal"/>
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:layout_marginTop="10dp"
+            android:text="@string/status" />
 
+        <!--<TextView-->
+            <!--android:id="@+id/song_title"-->
+            <!--style="@style/shadowEffect"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:text="@string/no_song_title" />-->
 
-        <!--<TextView
-            android:id="@+id/playing_time"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="00:00:00"
-            android:layout_gravity="center_horizontal"/> -->
+            android:orientation="horizontal">
 
-        <me.itangqi.waveloadingview.WaveLoadingView
+            <TextView
+                android:id="@+id/playing_time"
+                style="@style/shadowEffect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00:00" />
+
+            <TextView
+                android:id="@+id/bitrate"
+                style="@style/shadowEffect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_marginStart="20dp"
+                android:text="0 kbps" />
+
+        </LinearLayout>
+
+        <!--<me.itangqi.waveloadingview.WaveLoadingView
             android:id="@+id/waveLoadingView"
             android:layout_width="200dp"
             android:layout_height="300dp"
@@ -93,46 +148,43 @@
             app:wlv_titleBottomColor="@android:color/white"
             app:wlv_titleBottomSize="15sp"
             app:wlv_waveAmplitude="0"
-            app:wlv_waveColor="@color/colorAccent"/>
+            app:wlv_waveColor="@color/colorAccent"/> -->
 
-
-    </LinearLayout>
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:id = "@+id/relative3">
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true">
+            android:paddingBottom="3dp">
 
-            <Button
+            <ImageButton
+                android:id="@+id/button_backward"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:background="@null"
+                android:src="@drawable/ic_backward_toggle" />
+
+            <ToggleButton
                 android:id="@+id/button_play"
-                android:text="@string/button_play"
-                android:layout_marginTop="20dp"/>
-
-            <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/button_pause"
-                android:text="@string/button_pause"
-                android:layout_marginTop="20dp"/>
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="17dp"
+                android:background="@null"
+                android:button="@drawable/ic_play_pause_toggle"
+                android:textOff=""
+                android:textOn="" />
 
-            <Button
+            <ImageButton
+                android:id="@+id/button_forward"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/button_stop"
-                android:text="@string/button_stop"
-                android:layout_marginTop="20dp"/>
+                android:layout_gravity="center_vertical"
+                android:background="@null"
+                android:src="@drawable/ic_forward_toggle" />
 
         </LinearLayout>
 
-    </RelativeLayout>
-
+    </LinearLayout>
 </LinearLayout>

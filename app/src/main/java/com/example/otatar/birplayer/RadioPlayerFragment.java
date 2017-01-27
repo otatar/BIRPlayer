@@ -1,9 +1,15 @@
 package com.example.otatar.birplayer;
 
 
+import android.app.Activity;
 import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Color;
+import android.graphics.LinearGradient;
+import android.graphics.Shader;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -17,15 +23,18 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Random;
 
 import me.itangqi.waveloadingview.WaveLoadingView;
@@ -59,12 +68,18 @@ public class RadioPlayerFragment extends Fragment {
 
     public static final String LOG_TAG = "RadioPlayerFragmentLog";
     public static final String RADIO_STATION_OBJECT = "radio_station_object";
+    private static final String RADIO_STATION_OBJECT_LIST = "radio_station_object_list";
+
 
     public static final String RADIO_URL = "http://streaming.radioba.ba:10002/radio_Ba";
     public static final String RADIO_LOCAL_URL = "http://10.0.2.2:8080";
 
     /* Radio Station object */
     private RadioStation radioStation;
+
+    /* Radio Station List and position of radio station*/
+    private static ArrayList<RadioStation> radioStationList = new ArrayList<>();
+    private static int radioStationPosition;
 
     private Boolean bound = false;
 
@@ -74,14 +89,38 @@ public class RadioPlayerFragment extends Fragment {
     //Reference to service messenger
     private Messenger toServiceMessenger;
 
+    /* Reference to radio station name TextView */
+    private TextView radioStationName;
+
+    /* Reference to radio station location */
+    private TextView radioStationLocation;
+
+    /* Reference to radio station url */
+    private TextView radioStationUrl;
+
+    /* Reference to play/pause button */
+    private ToggleButton btnPlay;
+
+    /* Reference to forward button */
+    private ImageButton btnForward;
+
+    /* Reference to backward button */
+    private ImageButton btnBackward;
+
     /* Reference to status TextView */
     private TextView statusTextView;
 
+    /* Reference to current song title text view */
+    private TextView songTitle;
+
+    /* Reference to current playing time */
+    private TextView playTime;
+
+    /* Reference to current bit rate */
+    private TextView bitRate;
+
     /* Reference to favorite check box */
     private CheckBox favoriteCheckBox;
-
-    /* Reference to playing time text view */
-    private TextView playingTime;
 
     /* Is paying time running */
     private boolean playingTimeRunning;
@@ -93,7 +132,18 @@ public class RadioPlayerFragment extends Fragment {
 
     private WaveLoadingView mWaveLoadingView;
 
+    /* Container Activity */
+    private Main2Activity containerActivity;
 
+    /* Radio Station selected listener */
+    private OnRadioStationChangedListener radioStationChangedListener;
+
+    /**
+     * Interface implemented by container activity
+     */
+    public interface OnRadioStationChangedListener {
+        public void onRadioStationChanged(int position);
+    }
 
 
 
@@ -104,13 +154,15 @@ public class RadioPlayerFragment extends Fragment {
 
     /**
      * Method to instantiate and initialize new RadioPlayerFragment object
-     * @param radioStation
+     * @param position
+     * @param radioStationList
      * @return new RadioPlayerFragment object
      */
-    public static RadioPlayerFragment newInstance(RadioStation radioStation) {
+    public static RadioPlayerFragment newInstance(int position, ArrayList<RadioStation> radioStationList) {
 
         Bundle bundle = new Bundle();
-        bundle.putSerializable(RADIO_STATION_OBJECT, radioStation);
+        bundle.putInt(RADIO_STATION_OBJECT, position);
+        bundle.putSerializable(RADIO_STATION_OBJECT_LIST, radioStationList);
 
         RadioPlayerFragment radioPlayerFragment = new RadioPlayerFragment();
         radioPlayerFragment.setArguments(bundle);
@@ -135,17 +187,20 @@ public class RadioPlayerFragment extends Fragment {
 
                 if (bundle.getString(STATUS).equals(RadioPlayerService.MP_PLAYING)) {
                     playingTimeRunning = true;
-                    mWaveLoadingView.setAmplitudeRatio(60);
+                    if (!btnPlay.isChecked()) {
+                        btnPlay.toggle();
+                    }
+                    //mWaveLoadingView.setAmplitudeRatio(60);
 
                 } else if (bundle.getString(STATUS).equals(RadioPlayerService.MP_PAUSED)) {
                     playingTimeRunning = false;
-                    mWaveLoadingView.setAmplitudeRatio(0);
+                    //mWaveLoadingView.setAmplitudeRatio(0);
 
                 } else {
                     playingTimeRunning = false;
                     playingSecs = 0;
                     playingBitrate = 0;
-                    mWaveLoadingView.setAmplitudeRatio(0);
+                    //mWaveLoadingView.setAmplitudeRatio(0);
                 }
 
             } else if (msg.what == SEND_ERROR || msg.what == SEND_ALERT) {
@@ -209,7 +264,15 @@ public class RadioPlayerFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         /* Get RadioStation object from fragments arguments */
-        radioStation = (RadioStation) getArguments().getSerializable(RADIO_STATION_OBJECT);
+        radioStationPosition = getArguments().getInt(RADIO_STATION_OBJECT);
+        radioStationList.clear();
+        radioStationList.addAll((ArrayList<RadioStation>)getArguments().getSerializable(RADIO_STATION_OBJECT_LIST));
+
+        radioStation = radioStationList.get(radioStationPosition);
+
+        //Select the station
+        deselectAllRadioStations(radioStationList);
+        radioStation.setSelected(true);
 
     }
 
@@ -230,50 +293,83 @@ public class RadioPlayerFragment extends Fragment {
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_radio_player, container, false);
 
-        TextView radioStationName = (TextView) v.findViewById(R.id.radio_name);
-        TextView radioStationLocation = (TextView) v.findViewById(R.id.radio_location);
-        TextView radioStationUrl = (TextView) v.findViewById(R.id.radio_url);
-       // statusTextView = (TextView) v.findViewById(R.id.text_status);
-        favoriteCheckBox = (CheckBox) v.findViewById(R.id.station_favorite);
-       // playingTime = (TextView) v.findViewById(R.id.playing_time);
-        mWaveLoadingView = (WaveLoadingView) v.findViewById(R.id.waveLoadingView);
+        // Retain this fragment across configuration changes.
+        setRetainInstance(true);
 
-        Button buttonPlay = (Button)v.findViewById(R.id.button_play);
-        Button buttonPause = (Button)v.findViewById(R.id.button_pause);
-        Button buttonStop = (Button)v.findViewById(R.id.button_stop);
+        //Digital font
+        Typeface myTypeface = Typeface.createFromAsset(getActivity().getAssets(),
+                "digital-7.ttf");
+
+        /* Lets connect the parts */
+        radioStationName = (TextView) v.findViewById(R.id.radio_name);
+        radioStationLocation = (TextView) v.findViewById(R.id.radio_location);
+        radioStationUrl = (TextView) v.findViewById(R.id.radio_url);
+        statusTextView = (TextView) v.findViewById(R.id.text_status);
+        favoriteCheckBox = (CheckBox) v.findViewById(R.id.station_favorite);
+        playTime = (TextView) v.findViewById(R.id.playing_time);
+        playTime.setTypeface(myTypeface);
+        bitRate = (TextView) v.findViewById(R.id.bitrate);
+        bitRate.setTypeface(myTypeface);
+        //songTitle = (TextView) v.findViewById(R.id.song_title);
+        //mWaveLoadingView = (WaveLoadingView) v.findViewById(R.id.waveLoadingView);
+
+        btnPlay = (ToggleButton)v.findViewById(R.id.button_play);
+        btnForward = (ImageButton)v.findViewById(R.id.button_forward);
+        btnBackward = (ImageButton)v.findViewById(R.id.button_backward);
+
 
         //Run the playing timer handler
         runTimer();
-        animateWaveLoading();
 
-        //Listener for play button
-        buttonPlay.setOnClickListener(new View.OnClickListener() {
+        //Listener for play/pause button
+        btnPlay.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onClick(View v) {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 
-                sendAction(RadioPlayerFragment.ACTION_INIT);
-                sendAction(RadioPlayerFragment.ACTION_START);
+                Log.d(LOG_TAG, "onCheckedChanged");
 
-
+                if (isChecked) {
+                    sendAction(RadioPlayerFragment.ACTION_INIT);
+                    sendAction(RadioPlayerFragment.ACTION_START);
+                } else {
+                    sendAction(ACTION_STOP);
+                }
             }
         });
 
-        //Listener for pause button
-        buttonPause.setOnClickListener(new View.OnClickListener() {
+        //Listener for forward button
+        btnForward.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                sendAction(RadioPlayerFragment.ACTION_PAUSE);
-
-            }
-        });
-
-
-        //Listener for stop button
-        buttonStop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+                //Send stop RadioPlayerService
                 sendAction(ACTION_STOP);
+
+                //Change load next radio station
+                changeRadioStation(0);
+
+                //If play/pause toggle button is checked, un check it
+                if (btnPlay.isChecked()) {
+                    btnPlay.toggle();
+                }
+            }
+        });
+
+        //Listener for backward button
+        btnBackward.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                //Send stop RadioPlayerService
+                sendAction(ACTION_STOP);
+
+                //Change load next radio station
+                changeRadioStation(1);
+
+                //If play/pause toggle button is checked, un check it
+                if (btnPlay.isChecked()) {
+                    btnPlay.toggle();
+                }
             }
         });
 
@@ -296,20 +392,10 @@ public class RadioPlayerFragment extends Fragment {
             }
         });
 
-        // Set radio station name
-        radioStationName.setText(radioStation.getRadioStationName());
+        //Display radio station info
+        updateRadioStationDisplay();
 
-        // Set radio station location
-        radioStationLocation.setText(radioStation.getRadioStationLocation());
-
-        // Set radio station url
-        radioStationUrl.setText(radioStation.getRadioStationUrl());
-
-        //Set favorite check box
-        favoriteCheckBox.setChecked(radioStation.getFavorite());
-
-
-
+        Log.d(LOG_TAG, "Dovde");
         return v;
     }
 
@@ -342,6 +428,29 @@ public class RadioPlayerFragment extends Fragment {
         }
     }
 
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        Activity a = null;
+
+        if (context instanceof Activity){
+            a=(Activity) context;
+        }
+
+        // This makes sure that the container activity has implemented
+        // the callback interface. If not, it throws an exception
+        try {
+            radioStationChangedListener = (OnRadioStationChangedListener) a;
+            containerActivity = (Main2Activity) a;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(a.toString()
+                    + " must implement OnHeadlineSelectedListener");
+        }
+    }
+
+
     //Changing status
     protected void setStatus(String statusText) {
 
@@ -353,6 +462,7 @@ public class RadioPlayerFragment extends Fragment {
                     break;
                 case RadioPlayerService.MP_ERROR:
                     status = "Error";
+                    btnPlay.toggle();
                     break;
                 case RadioPlayerService.MP_INIT:
                     status = "Initialized";
@@ -376,11 +486,10 @@ public class RadioPlayerFragment extends Fragment {
                     status = "Buffering...";
                     break;
                 default:
-                    status = "Playing...";
-                    setSongTitle(statusText);
-
+                    status = statusText;
             }
-            mWaveLoadingView.setTopTitle(status);
+
+           statusTextView.setText(RadioPlayerFragment.capitalizeString(status));
     }
 
     /**
@@ -402,6 +511,8 @@ public class RadioPlayerFragment extends Fragment {
      * @param action
      */
     private void sendAction(String action) {
+
+        Log.d(LOG_TAG, "sendAction");
 
         if (action.equals(RadioPlayerFragment.ACTION_INIT)) {
             try {
@@ -447,11 +558,13 @@ public class RadioPlayerFragment extends Fragment {
 
                 String time = String.format("%02d:%02d:%02d", hour, min, res_sec);
                 if (playingBitrate != 0) {
-                    mWaveLoadingView.setBottomTitle(time + " \n" + playingBitrate/1000 + " kb/s");
+                    playTime.setText(time);
+                    bitRate.setText(playingBitrate/1000 + " kb/s");
                 } else {
-                    mWaveLoadingView.setBottomTitle(time);
+                    playTime.setText(time);
+                    bitRate.setText("0 kb/s");
                 }
-                //playingTime.setText(time);
+
 
                 if (playingTimeRunning) {
                     playingSecs++;
@@ -489,42 +602,135 @@ public class RadioPlayerFragment extends Fragment {
     }
 
 
-    private void startVisualizer(){
+    /**
+     * Sets song title
+     * @param currentSongTitle
+     */
+    private void setSongTitle(String currentSongTitle) {
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
+        songTitle.setText(currentSongTitle);
 
-                BufferedInputStream in = null;
+    }
 
-                try {
-                    URL url = new URL(radioStation.getListenUrl());
 
-                    InputStream inputStream = url.openStream();
-                    in = new BufferedInputStream(inputStream);
+    private void changeRadioStation(int direction) {
 
-                    byte[] data = new byte[100];
+        Log.d(LOG_TAG, "changeRadioStation");
 
-                    while ((in.read(data)) != -1) {
-                        //horizon.updateView(data);
+        //Deselect previous station
+        radioStation.setSelected(false);
 
+        if (direction == 0) {
+            //Forward
+            if (radioStationPosition == radioStationList.size() - 1) {
+                radioStationPosition = 0;
+                radioStation = radioStationList.get(radioStationPosition);
+            } else {
+                radioStationPosition++;
+                radioStation = radioStationList.get(radioStationPosition);
+            }
+
+        } else if (direction == 1) {
+            //Backward
+            if (radioStationPosition == 0) {
+                radioStationPosition = radioStationList.size() - 1;
+                radioStation = radioStationList.get(radioStationPosition);
+            } else {
+                radioStationPosition--;
+                radioStation = radioStationList.get(radioStationPosition);
+            }
+        }
+
+        //Select new station
+        radioStation.setSelected(true);
+
+       //Notice about that
+        containerActivity.onRadioStationChanged(radioStationPosition);
+
+        //Update radio station display
+        updateRadioStationDisplay();
+
+    }
+
+    /**
+     * Updates radio station display views
+     */
+    private void updateRadioStationDisplay() {
+
+        Log.d(LOG_TAG, "updateRadioStationDisplay");
+
+        // Set radio station name
+        radioStationName.setText(radioStation.getRadioStationName());
+        Shader shader = new LinearGradient(0, 0, 0, radioStationName.getTextSize(), R.color.yellow, Color.BLUE,
+                Shader.TileMode.CLAMP);
+        radioStationName.getPaint().setShader(shader);
+
+        // Set radio station location
+        radioStationLocation.setText(radioStation.getRadioStationLocation());
+        shader = new LinearGradient(0, 0, 0, radioStationLocation.getTextSize(), R.color.yellow, Color.BLUE,
+                Shader.TileMode.CLAMP);
+        radioStationLocation.getPaint().setShader(shader);
+
+        // Set radio station url
+        shader = new LinearGradient(0, 0, 0, radioStationUrl.getTextSize(), R.color.yellow, Color.BLUE,
+                Shader.TileMode.CLAMP);
+        radioStationUrl.setText(radioStation.getRadioStationUrl());
+        radioStationUrl.getPaint().setShader(shader);
+
+        //Set favorite check box
+        favoriteCheckBox.setChecked(radioStation.getFavorite());
+    }
+
+    /**
+     * Deselects all radio stations
+     * @param list
+     */
+    private void deselectAllRadioStations(ArrayList<RadioStation> list) {
+
+        Log.d(LOG_TAG, "deselectAllRadioStations");
+
+        for (RadioStation station: list) {
+            if (station.getSelected()) {
+                station.setSelected(false);
+            }
+        }
+    }
+
+
+    /**
+     * Capitalize first char of String
+     * @param string
+     * @return
+     */
+    public static String capitalizeString(String string) {
+
+        Log.d(LOG_TAG, "deselectAllRadioStations");
+
+        String retString = "";
+
+        if (string == null) {
+            return null;
+        } else {
+
+            String[] words = string.split(" ");
+            if (words.length < 2) {
+                return string;
+            } else {
+                for (String word:words) {
+                    char[] chars = word.toLowerCase().toCharArray();
+                    if (Character.isLetter(chars[0])) {
+                        chars[0] = Character.toUpperCase(chars[0]);
                     }
 
-
-                }catch (IOException e) {
-                    Log.d(LOG_TAG, "Exception");
+                    retString += String.valueOf(chars);
+                    retString += "";
                 }
-
             }
-        }).start();
 
+        }
+
+        return retString;
     }
 
-
-    private void setSongTitle(String songTitle) {
-
-        mWaveLoadingView.setCenterTitle(songTitle);
-
-    }
 
 }

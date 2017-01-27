@@ -6,6 +6,9 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
@@ -399,7 +402,7 @@ public class RadioPlayerService extends Service {
                 playingTimeRunning = true;
 
                 /* If we are connected over WiFi, acquire a WiFi lock */
-                if (MainActivity.internetConnection == NetworkUtil.TYPE_WIFI) {
+                if (Main2Activity.internetConnection == NetworkUtil.TYPE_WIFI) {
                     wiFiLock.acquire();
                 }
                 setMPState(RadioPlayerService.MP_PLAYING);
@@ -662,15 +665,22 @@ public class RadioPlayerService extends Service {
         PendingIntent pstopIntent = PendingIntent.getService(this, 0,
                 stopIntent, 0);
 
+        Bitmap large_icon = BitmapFactory.decodeResource(this.getResources(),
+                R.drawable.large_icon_bw);
+
+        Resources res = this.getResources();
+        int height = (int) res.getDimension(android.R.dimen.notification_large_icon_height);
+        int width = (int) res.getDimension(android.R.dimen.notification_large_icon_width);
+        large_icon = Bitmap.createScaledBitmap(large_icon, width, height, false);
 
         Notification notification = new Notification.Builder(this)
                 .setSmallIcon(R.drawable.ic_stat_notification)
+                .setLargeIcon(large_icon)
                 .setContentTitle("BIR Player")
                 .setContentText("Playing " + radioStation.getRadioStationName())
                 .setContentIntent(pi)
                 .addAction(android.R.drawable.ic_media_play, "Play", pplayIntent)
                 .addAction(android.R.drawable.ic_media_pause, "Pause", ppauseIntent)
-                .addAction(R.drawable.ic_media_stop, "Stop", pstopIntent)
                 .build();
 
         startForeground(NOTIFICATION_ID, notification);

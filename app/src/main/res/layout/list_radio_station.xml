@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/recycler_highlight"
+    android:background="@drawable/listbckg"
     android:baselineAligned="false"
     android:orientation="horizontal"
     android:padding="16dp">
@@ -42,7 +42,8 @@
             android:paddingLeft="30dp"
             android:paddingRight="10dp"
             android:text="Genre"
-            android:textColor="@color/sub_text_color" />
+            android:textSize="13sp"
+            android:textColor="@color/default_background" />
 
         <TextView
             android:id="@+id/list_radio_location"
@@ -51,7 +52,8 @@
             android:layout_gravity="left"
             android:paddingLeft="30dp"
             android:text="Location"
-            android:textColor="@color/sub_text_color" />
+            android:textSize="13sp"
+            android:textColor="@color/default_background" />
 
     </LinearLayout>
 
@@ -76,13 +78,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="2"
+        android:layout_gravity="center_vertical"
         android:orientation="vertical">
 
         <es.claucookie.miniequalizerlibrary.EqualizerView
+            xmlns:custom="http://schemas.android.com/apk/res-auto"
             android:id="@+id/mini_equalizer"
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:layout_gravity="center_horizontal"
+            custom:foregroundColor="@color/gradient_start_color"
+            android:layout_gravity="center"
             android:visibility="gone" />
 
     </RelativeLayout>
