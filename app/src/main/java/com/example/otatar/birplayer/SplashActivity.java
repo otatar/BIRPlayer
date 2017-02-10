@@ -18,7 +18,6 @@ public class SplashActivity extends AppCompatActivity {
 
         Intent intent = new Intent(this, Main2Activity.class);
         intent.setAction(Intent.ACTION_MAIN);
-        Log.d("SPLASH Omer", "Intent: " + intent);
         startActivity(intent);
         finish();
     }

@@ -5,22 +5,38 @@
     android:background="@drawable/listbckg"
     android:baselineAligned="false"
     android:orientation="horizontal"
-    android:padding="16dp">
+    android:padding="6dp">
 
     <RelativeLayout
         android:layout_width="wrap_content"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical">
 
-        <ImageView
+        <!--<ImageView-->
+            <!--android:id="@+id/play_icon"-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:src="@drawable/list_play_icon" />-->
+
+        <ToggleButton
+            android:id="@+id/button_play_pause"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/list_play_icon" />
+            android:layout_gravity="center_vertical"
+            android:background="@null"
+            android:button="@drawable/list_play_pause_toggle"
+            android:textOff="@null"
+            android:textSize="0dp"
+            android:text="@null"
+            android:textOn="@null" />
+
     </RelativeLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
+        android:layout_weight="2"
+        android:layout_marginLeft="10dp"
         android:orientation="vertical">
 
         <TextView
@@ -28,7 +44,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="left"
-            android:paddingLeft="30dp"
             android:text="Radio Name"
             android:textAppearance="?android:attr/textAppearanceListItem" />
 
@@ -39,7 +54,6 @@
             android:layout_gravity="start"
             android:ellipsize="end"
             android:maxLines="1"
-            android:paddingLeft="30dp"
             android:paddingRight="10dp"
             android:text="Genre"
             android:textSize="13sp"
@@ -50,7 +64,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="left"
-            android:paddingLeft="30dp"
             android:text="Location"
             android:textSize="13sp"
             android:textColor="@color/default_background" />
@@ -60,7 +73,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="2"
+        android:layout_weight="3"
         android:layout_gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -77,7 +90,7 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="2"
+        android:layout_weight="3"
         android:layout_gravity="center_vertical"
         android:orientation="vertical">
 

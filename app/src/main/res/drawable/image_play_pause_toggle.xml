@@ -1,0 +1,7 @@
+<?xml version = "1.0" encoding = "utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/ic_player_pause" android:state_activated="true" android:state_pressed="false"/>
+    <item android:drawable="@drawable/ic_player_pause_yellow" android:state_activated="true" android:state_pressed="true"/>
+    <item android:drawable="@drawable/ic_player_play" android:state_activated="false" android:state_pressed="false"/>
+    <item android:drawable="@drawable/ic_player_play_yellow" android:state_activated="false" android:state_pressed="true"/>
+</selector>

@@ -24,20 +24,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.ToggleButton;
 
-
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Random;
-
-import me.itangqi.waveloadingview.WaveLoadingView;
 
 
 /**
@@ -51,6 +42,7 @@ public class RadioPlayerFragment extends Fragment {
     public static final String EXTRA_PARAM = "param";
     public static final String ACTION = "action";
     public static final String ACTION_INIT = "init";
+    public static final String ACTION_INIT_AND_START = "initAndStart";
     public static final String ACTION_START = "start";
     public static final String ACTION_STOP = "stop";
     public static final String ACTION_PAUSE = "pause";
@@ -70,8 +62,6 @@ public class RadioPlayerFragment extends Fragment {
     public static final String RADIO_STATION_OBJECT = "radio_station_object";
     private static final String RADIO_STATION_OBJECT_LIST = "radio_station_object_list";
 
-
-    public static final String RADIO_URL = "http://streaming.radioba.ba:10002/radio_Ba";
     public static final String RADIO_LOCAL_URL = "http://10.0.2.2:8080";
 
     /* Radio Station object */
@@ -81,6 +71,7 @@ public class RadioPlayerFragment extends Fragment {
     private static ArrayList<RadioStation> radioStationList = new ArrayList<>();
     private static int radioStationPosition;
 
+    /* If we are bound to service */
     private Boolean bound = false;
 
     //Messenger
@@ -95,11 +86,14 @@ public class RadioPlayerFragment extends Fragment {
     /* Reference to radio station location */
     private TextView radioStationLocation;
 
+    /* Reference to radio station genre */
+    private TextView radioStationGenre;
+
     /* Reference to radio station url */
     private TextView radioStationUrl;
 
     /* Reference to play/pause button */
-    private ToggleButton btnPlay;
+    private ImageView btnPlay;
 
     /* Reference to forward button */
     private ImageButton btnForward;
@@ -109,9 +103,6 @@ public class RadioPlayerFragment extends Fragment {
 
     /* Reference to status TextView */
     private TextView statusTextView;
-
-    /* Reference to current song title text view */
-    private TextView songTitle;
 
     /* Reference to current playing time */
     private TextView playTime;
@@ -130,8 +121,6 @@ public class RadioPlayerFragment extends Fragment {
 
     private int playingBitrate = 0;
 
-    private WaveLoadingView mWaveLoadingView;
-
     /* Container Activity */
     private Main2Activity containerActivity;
 
@@ -142,7 +131,7 @@ public class RadioPlayerFragment extends Fragment {
      * Interface implemented by container activity
      */
     public interface OnRadioStationChangedListener {
-        public void onRadioStationChanged(int position);
+        void onRadioStationChanged(int position);
     }
 
 
@@ -154,8 +143,8 @@ public class RadioPlayerFragment extends Fragment {
 
     /**
      * Method to instantiate and initialize new RadioPlayerFragment object
-     * @param position
-     * @param radioStationList
+     * @param position Position of the radio staton to be played in the list
+     * @param radioStationList List of radio stations
      * @return new RadioPlayerFragment object
      */
     public static RadioPlayerFragment newInstance(int position, ArrayList<RadioStation> radioStationList) {
@@ -187,8 +176,8 @@ public class RadioPlayerFragment extends Fragment {
 
                 if (bundle.getString(STATUS).equals(RadioPlayerService.MP_PLAYING)) {
                     playingTimeRunning = true;
-                    if (!btnPlay.isChecked()) {
-                        btnPlay.toggle();
+                    if (!btnPlay.isActivated()) {
+                        btnPlay.setActivated(true);
                     }
                     //mWaveLoadingView.setAmplitudeRatio(60);
 
@@ -303,6 +292,7 @@ public class RadioPlayerFragment extends Fragment {
         /* Lets connect the parts */
         radioStationName = (TextView) v.findViewById(R.id.radio_name);
         radioStationLocation = (TextView) v.findViewById(R.id.radio_location);
+        radioStationGenre = (TextView) v.findViewById(R.id.radio_genre);
         radioStationUrl = (TextView) v.findViewById(R.id.radio_url);
         statusTextView = (TextView) v.findViewById(R.id.text_status);
         favoriteCheckBox = (CheckBox) v.findViewById(R.id.station_favorite);
@@ -310,10 +300,9 @@ public class RadioPlayerFragment extends Fragment {
         playTime.setTypeface(myTypeface);
         bitRate = (TextView) v.findViewById(R.id.bitrate);
         bitRate.setTypeface(myTypeface);
-        //songTitle = (TextView) v.findViewById(R.id.song_title);
         //mWaveLoadingView = (WaveLoadingView) v.findViewById(R.id.waveLoadingView);
 
-        btnPlay = (ToggleButton)v.findViewById(R.id.button_play);
+        btnPlay = (ImageView)v.findViewById(R.id.button_play);
         btnForward = (ImageButton)v.findViewById(R.id.button_forward);
         btnBackward = (ImageButton)v.findViewById(R.id.button_backward);
 
@@ -322,18 +311,21 @@ public class RadioPlayerFragment extends Fragment {
         runTimer();
 
         //Listener for play/pause button
-        btnPlay.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        btnPlay.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            public void onClick(View v) {
 
-                Log.d(LOG_TAG, "onCheckedChanged");
+                Log.d(LOG_TAG, "isActivated: " + String.valueOf(btnPlay.isActivated()));
 
-                if (isChecked) {
-                    sendAction(RadioPlayerFragment.ACTION_INIT);
-                    sendAction(RadioPlayerFragment.ACTION_START);
+                if (!btnPlay.isActivated()) {
+                    sendAction(ACTION_INIT);
+                    sendAction(ACTION_START);
                 } else {
                     sendAction(ACTION_STOP);
                 }
+
+                //Toggle state
+                btnPlay.setActivated(!btnPlay.isActivated());
             }
         });
 
@@ -348,9 +340,9 @@ public class RadioPlayerFragment extends Fragment {
                 //Change load next radio station
                 changeRadioStation(0);
 
-                //If play/pause toggle button is checked, un check it
-                if (btnPlay.isChecked()) {
-                    btnPlay.toggle();
+                //If play/pause toggle button is active, deactivate it
+                if (btnPlay.isActivated()) {
+                    btnPlay.setActivated(false);
                 }
             }
         });
@@ -366,9 +358,9 @@ public class RadioPlayerFragment extends Fragment {
                 //Change load next radio station
                 changeRadioStation(1);
 
-                //If play/pause toggle button is checked, un check it
-                if (btnPlay.isChecked()) {
-                    btnPlay.toggle();
+                //If play/pause toggle button is activated, deactivate it
+                if (btnPlay.isActivated()) {
+                    btnPlay.setActivated(false);
                 }
             }
         });
@@ -395,7 +387,6 @@ public class RadioPlayerFragment extends Fragment {
         //Display radio station info
         updateRadioStationDisplay();
 
-        Log.d(LOG_TAG, "Dovde");
         return v;
     }
 
@@ -462,7 +453,7 @@ public class RadioPlayerFragment extends Fragment {
                     break;
                 case RadioPlayerService.MP_ERROR:
                     status = "Error";
-                    btnPlay.toggle();
+                    btnPlay.setActivated(false);
                     break;
                 case RadioPlayerService.MP_INIT:
                     status = "Initialized";
@@ -494,7 +485,7 @@ public class RadioPlayerFragment extends Fragment {
 
     /**
      * Show message via snack bar to the user
-     * @param msg
+     * @param msg Message to show
      */
     private void showSnackBar(String msg) {
 
@@ -508,7 +499,7 @@ public class RadioPlayerFragment extends Fragment {
 
     /**
      * Send action to service thread via messenger
-     * @param action
+     * @param action Action string
      */
     private void sendAction(String action) {
 
@@ -576,43 +567,10 @@ public class RadioPlayerFragment extends Fragment {
 
     }
 
-    private void animateWaveLoading() {
-
-        // Handler
-        final Handler handler = new Handler();
-
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-
-                if (playingTimeRunning) {
-
-                    Random generator = new Random();
-                    int i = generator.nextInt(10) + 1;
-
-                    mWaveLoadingView.setAmplitudeRatio(60 + i);
-                    mWaveLoadingView.setProgressValue(60 + i);
-
-                }
-
-                handler.postDelayed(this, 1000);
-            }
-        });
-
-    }
-
-
     /**
-     * Sets song title
-     * @param currentSongTitle
+     * Function to change radio station in given direction
+     * @param direction 0 forward, 1 backward
      */
-    private void setSongTitle(String currentSongTitle) {
-
-        songTitle.setText(currentSongTitle);
-
-    }
-
-
     private void changeRadioStation(int direction) {
 
         Log.d(LOG_TAG, "changeRadioStation");
@@ -677,34 +635,55 @@ public class RadioPlayerFragment extends Fragment {
         radioStationUrl.setText(radioStation.getRadioStationUrl());
         radioStationUrl.getPaint().setShader(shader);
 
+        //Set radio station genre
+        shader = new LinearGradient(0, 0, 0, radioStationUrl.getTextSize(), R.color.yellow, Color.BLUE,
+                Shader.TileMode.CLAMP);
+        radioStationGenre.setText(radioStation.getRadioStationGenre());
+        radioStationGenre.getPaint().setShader(shader);
+
         //Set favorite check box
         favoriteCheckBox.setChecked(radioStation.getFavorite());
     }
 
     /**
      * Deselects all radio stations
-     * @param list
+     * @param list List of radio stations
      */
-    private void deselectAllRadioStations(ArrayList<RadioStation> list) {
+    public static void deselectAllRadioStations(ArrayList<RadioStation> list) {
 
         Log.d(LOG_TAG, "deselectAllRadioStations");
 
         for (RadioStation station: list) {
             if (station.getSelected()) {
                 station.setSelected(false);
+               // station.setPlaying(false);
             }
         }
     }
 
+    /**
+     * Stops all radio stations
+     */
+      public static void stopAllRadioStations(ArrayList<RadioStation> list) {
+
+          Log.d(LOG_TAG, "stopAllRadioStations");
+
+          for (RadioStation station: list) {
+              if (station.getPlaying()) {
+                  station.setPlaying(false);
+              }
+          }
+      }
+
 
     /**
      * Capitalize first char of String
-     * @param string
-     * @return
+     * @param string String to capitalize
+     * @return Capitalized string
      */
     public static String capitalizeString(String string) {
 
-        Log.d(LOG_TAG, "deselectAllRadioStations");
+        Log.d(LOG_TAG, "capitalizeString");
 
         String retString = "";
 

@@ -34,6 +34,7 @@
     <string name="radio_location">Location</string>
     <string name="radio_station">Radio Station</string>
     <string name="radio_url">URL</string>
+    <string name="radio_genre">Genre</string>
 
     <string-array name="drawer_items">
         <item>Sve radio stanice</item>

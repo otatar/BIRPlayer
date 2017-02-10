@@ -22,19 +22,19 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.FrameLayout;
 import android.widget.ListView;
 
 import java.util.ArrayList;
 
 public class Main2Activity extends AppCompatActivity implements RadioStationListFragment.OnRadioStationSelectedListener,
-                                                                RadioPlayerFragment.OnRadioStationChangedListener {
+                                                                RadioPlayerFragment.OnRadioStationChangedListener,
+                                                                RadioStationListFragment.OnRadioStationSelectedAndPlayListener {
 
     //Log TAG
     private static final String LOG_TAG = "Main2Activity";
 
     //Bundle keys
-    private static String SELECTED_POSITION = "selected_position";
+    public static String SELECTED_RADIO_STATION = "selected_position";
 
     // Whether there is a internet connection.
     public static int internetConnection;
@@ -52,9 +52,6 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
     //Tab layout
     private TabLayout tabs;
-
-    //Frame layout
-    private FrameLayout frameLayout;
 
     //Search view
     private SearchView searchView;
@@ -75,10 +72,16 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
     /**
      * Implementation of interface OnRadioStationSelected
      *
-     * @param position
+     * @param position Selected position
      */
     @Override
-    public void onRadioStationSelected(int position, ArrayList<RadioStation> radioStationList) {
+    public void onRadioStationSelected(int position, ArrayList<RadioStation> radioStationList, Boolean startPlayer) {
+
+        if (!startPlayer) {
+            selectedRadioStationPosition = position;
+            selectedRadioStationList.addAll(radioStationList);
+            return;
+        }
 
         Log.d(LOG_TAG, "onRadioStationSelected");
         Log.d(LOG_TAG, "Selected radio station: " + radioStationList.get(position).getRadioStationName());
@@ -109,8 +112,8 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
     }
 
     /**
-     * Implemtation of interface OnRadioStationChanged
-     * @param position
+     * Implementation of interface OnRadioStationChanged
+     * @param position Changed position
      */
     @Override
     public void onRadioStationChanged(int position) {
@@ -119,6 +122,36 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         Log.d(LOG_TAG, "Changed to radio station: " + selectedRadioStationList.get(position).getRadioStationName());
 
         selectedRadioStationPosition = position;
+
+    }
+
+
+    @Override
+    public void onRadioStationSelectedAndPlay(RadioStation radioStation, Boolean stopRadioStation) {
+
+        Log.d(LOG_TAG, "onRadioStationSelectedAndPlay");
+
+        if (!stopRadioStation) {
+
+            //First, stop previous radio station
+            Intent stopIntent = new Intent(this, RadioPlayerService.class);
+            stopIntent.setAction(RadioPlayerFragment.ACTION_STOP);
+            startService(stopIntent);
+
+            //Play
+            Intent playIntent = new Intent(this, RadioPlayerService.class);
+            playIntent.setAction(RadioPlayerFragment.ACTION_INIT_AND_START);
+            playIntent.putExtra(SELECTED_RADIO_STATION, radioStation);
+            startService(playIntent);
+
+        } else {
+
+            //Stop
+            Intent stopIntent = new Intent(this, RadioPlayerService.class);
+            stopIntent.setAction(RadioPlayerFragment.ACTION_STOP);
+            startService(stopIntent);
+
+        }
 
     }
 
@@ -142,8 +175,6 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         //Get references to views
         drawerLayout = (DrawerLayout) findViewById(R.id.navigation_drawer);
         drawerList = (ListView) findViewById(R.id.list_view);
-        //Frame layout
-        frameLayout = (FrameLayout) findViewById(R.id.frame_layout);
 
         //From the top, create toolbar
         toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -155,7 +186,7 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
          //Init Navigation Drawer
 
         //Show list header
-        View drawerHeader = (View) getLayoutInflater().inflate(R.layout.drawer_header_view, null);
+        View drawerHeader = getLayoutInflater().inflate(R.layout.drawer_header_view, null);
         drawerList.addHeaderView(drawerHeader);
 
 
@@ -260,7 +291,6 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
                     } else {
                         //Start RadioPlayerFragment
                         radioStationListFragmentInForeground = false;
-                        Log.d(LOG_TAG, "Omer Position: " + selectedRadioStationPosition);
                         Fragment fragment = RadioPlayerFragment.newInstance(selectedRadioStationPosition, selectedRadioStationList);
                         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                         ft.replace(R.id.frame_layout, fragment, "visible_fragment");
@@ -297,7 +327,7 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
             //Restarted due to change in configuration (screen rotation)
             if (radioStationListFragmentInForeground) {
-                Fragment fragment = RadioStationListFragment.newInstance(false, null);
+                Fragment fragment = RadioStationListFragment.newInstance(false, selectedRadioStationList.get(selectedRadioStationPosition));
                 FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                 ft.add(R.id.frame_layout, fragment);
                 ft.commit();
@@ -311,6 +341,8 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
             // Check network connection and alter user about it
             checkAndAlertNetworkConnection();
+
+            radioStationListFragmentInForeground = true;
 
             Fragment fragment = RadioStationListFragment.newInstance(true, null);
             FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
@@ -419,7 +451,7 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
     /**
      * Setting activity's subtitle
-     * @param subtitle
+     * @param subtitle Activity subtitle
      */
     public void setActivitySubtitle(String subtitle) {
 

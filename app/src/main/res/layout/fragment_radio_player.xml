@@ -47,6 +47,13 @@
                 android:text="@string/radio_location" />
 
             <TextView
+                android:id="@+id/radio_genre"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="@string/radio_genre" />
+
+            <TextView
                 android:id="@+id/radio_url"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -165,16 +172,14 @@
                 android:background="@null"
                 android:src="@drawable/ic_backward_toggle" />
 
-            <ToggleButton
+            <ImageView
                 android:id="@+id/button_play"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:layout_marginLeft="17dp"
                 android:background="@null"
-                android:button="@drawable/ic_play_pause_toggle"
-                android:textOff=""
-                android:textOn="" />
+                android:src="@drawable/image_play_pause_toggle"/>
+
 
             <ImageButton
                 android:id="@+id/button_forward"

@@ -18,6 +18,7 @@ public class RadioStation implements Serializable {
     private String listenType;
     private Boolean isFavorite;
     private Boolean isPlaying;
+    private Boolean isConnecting;
     private Boolean isSelected;
 
     public RadioStation(int id, int sid, String name, String genre, String url,
@@ -34,6 +35,7 @@ public class RadioStation implements Serializable {
         this.isFavorite = (favorite == 0) ? false : true;
         this.isPlaying = false;
         this.isSelected = false;
+        this.isConnecting = false;
 
     }
 
@@ -94,5 +96,13 @@ public class RadioStation implements Serializable {
 
     public void setSelected(Boolean selected) {
         isSelected = selected;
+    }
+
+    public Boolean getConnecting() {
+        return isConnecting;
+    }
+
+    public void setConnecting(Boolean connecting) {
+        isConnecting = connecting;
     }
 }

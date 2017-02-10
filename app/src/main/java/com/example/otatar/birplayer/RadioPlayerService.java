@@ -10,11 +10,9 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.AudioManager;
-import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.wifi.WifiManager;
-import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,10 +23,8 @@ import android.os.PowerManager;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
@@ -80,9 +76,6 @@ public class RadioPlayerService extends Service {
     */
     public static MediaPlayer mediaPlayer;
 
-
-    public final IBinder binder = new RadioPlayerBinder();
-
     /**
      * LOG_TAG string
      */
@@ -127,7 +120,7 @@ public class RadioPlayerService extends Service {
     /**
      * Variable to track MediaPlayer state
      */
-    private String mpState = this.MP_NOT_READY;
+    private String mpState = RadioPlayerService.MP_NOT_READY;
 
     // Static variable to hold reference to self (singleton)
     public static RadioPlayerService radioPlayerService;
@@ -152,7 +145,7 @@ public class RadioPlayerService extends Service {
     /**
      * Returns signle instance of RadioPlayerService class (singleton)
      *
-     * @return
+     * @return RadioPlayer service object (singleton)
      */
     public static RadioPlayerService getRadioPlayerService() {
 
@@ -162,13 +155,6 @@ public class RadioPlayerService extends Service {
 
         return radioPlayerService;
 
-    }
-
-
-    class RadioPlayerBinder extends Binder {
-        RadioPlayerService getRadioPlayer() {
-            return RadioPlayerService.this;
-        }
     }
 
     /**
@@ -224,7 +210,7 @@ public class RadioPlayerService extends Service {
     /**
      * Returns new intent that starts service
      *
-     * @param context
+     * @param context Context object
      * @return intent that starts service
      */
     public static Intent newStartIntent(Context context) {
@@ -260,6 +246,13 @@ public class RadioPlayerService extends Service {
             } else if (intent.getAction().equals(RadioPlayerFragment.ACTION_STOP)) {
 
                 stopMediaPlayer();
+
+            } else if (intent.getAction().equals(RadioPlayerFragment.ACTION_INIT_AND_START)) {
+
+                Bundle bundle = intent.getExtras();
+                radioStation = (RadioStation) bundle.getSerializable(Main2Activity.SELECTED_RADIO_STATION);
+                initMediaPlayer(radioStation.getListenUrl());
+                startMediaPlayer();
             }
         }
 
@@ -349,14 +342,14 @@ public class RadioPlayerService extends Service {
             @Override
             public boolean onError(MediaPlayer mp, int what, int extra) {
 
-                if (what == mediaPlayer.MEDIA_ERROR_UNKNOWN) {
+                if (what == MediaPlayer.MEDIA_ERROR_UNKNOWN) {
                     Log.d(LOG_TAG, "Unknown error");
                     setMPState(RadioPlayerService.MP_ERROR);
                     sendStatus();
                     //Send alert
                     sendAlert(RadioPlayerFragment.SEND_ERROR, getResources().getString(R.string.streaming_server_unreachable));
 
-                } else if (what == mediaPlayer.MEDIA_ERROR_SERVER_DIED) {
+                } else if (what == MediaPlayer.MEDIA_ERROR_SERVER_DIED) {
                     Log.d(LOG_TAG, "Lost connection to streaming server");
                     setMPState(RadioPlayerService.MP_LOST_CONNECTION);
                     sendStatus();
@@ -371,6 +364,8 @@ public class RadioPlayerService extends Service {
         mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mediaPlayer) {
+
+                Log.d(LOG_TAG, "onPrepared");
 
                 // We are ready
                 setMPState(RadioPlayerService.MP_READY);
@@ -415,7 +410,6 @@ public class RadioPlayerService extends Service {
 
                 retrieveBitRate();
 
-
             }
         });
 
@@ -457,14 +451,14 @@ public class RadioPlayerService extends Service {
     /**
      * Initialize media player.
      *
-     * @param mediaURL
+     * @param mediaURL Location of the stream
      */
     protected void initMediaPlayer(String mediaURL) {
 
         Log.i(LOG_TAG, "initMediaPlayer");
 
         // Skip initialization if media player is paused or is playing
-        if (mpState == RadioPlayerService.MP_PAUSED || mpState == RadioPlayerService.MP_PLAYING) {
+        if (mpState.equals(RadioPlayerService.MP_PAUSED) || mpState.equals(RadioPlayerService.MP_PLAYING)) {
             return;
         }
 
@@ -491,7 +485,7 @@ public class RadioPlayerService extends Service {
         Log.i(LOG_TAG, "startMediaPlayer");
 
         // If media player is pause or playing, just play
-        if (mpState == RadioPlayerService.MP_PAUSED) {
+        if (mpState.equals(RadioPlayerService.MP_PAUSED)) {
             // Play!!!
             mediaPlayer.start();
             radioStation.setPlaying(true);
@@ -504,13 +498,12 @@ public class RadioPlayerService extends Service {
                 refreshMetadata(radioStation.getListenUrl());
             }
 
-        } else if (mpState == RadioPlayerService.MP_PLAYING) {
+        } else if (mpState.equals(RadioPlayerService.MP_PLAYING)) {
             //We are already playing, well do nothing
 
-        } else if (mpState == RadioPlayerService.MP_ERROR) {
+        } else if (mpState.equals(RadioPlayerService.MP_ERROR)) {
 
             //Media player should be reset
-            return;
 
         } else {
             //Because prepareAsync() can take too long if radio station server isn't reachable, check for it
@@ -528,7 +521,7 @@ public class RadioPlayerService extends Service {
 
         Log.i(LOG_TAG, "pauseMediaPlayer");
 
-        if (mpState == RadioPlayerService.MP_PLAYING) {
+        if (mpState.equals(RadioPlayerService.MP_PLAYING)) {
             mediaPlayer.pause();
             setMPState(RadioPlayerService.MP_PAUSED);
             sendStatus();
@@ -550,7 +543,11 @@ public class RadioPlayerService extends Service {
 
         Log.i(LOG_TAG, "stopMediaPlayer");
 
-        if ((mpState == RadioPlayerService.MP_PAUSED) || (mpState == RadioPlayerService.MP_PLAYING)) {
+        if (radioStation != null) {
+            radioStation.setPlaying(false);
+        }
+
+        if ((mpState.equals(RadioPlayerService.MP_PAUSED)) || (mpState.equals(RadioPlayerService.MP_PLAYING))) {
             mediaPlayer.stop();
             mediaPlayer.reset();
             playingTimeRunning = false;
@@ -578,11 +575,6 @@ public class RadioPlayerService extends Service {
             Log.d(LOG_TAG, "Cancel metadata retriever");
             retrieveTimer.cancel();
         }
-
-        if (radioStation != null) {
-            radioStation.setPlaying(false);
-        }
-
 
     }
 
@@ -616,7 +608,7 @@ public class RadioPlayerService extends Service {
     /**
      * Send error to UI thread via messenger
      *
-     * @param alert
+     * @param alert Alert message
      */
     private void sendAlert(int type, String alert) {
 
@@ -660,11 +652,6 @@ public class RadioPlayerService extends Service {
         PendingIntent ppauseIntent = PendingIntent.getService(this, 0,
                 pauseIntent, 0);
 
-        Intent stopIntent = new Intent(this, RadioPlayerService.class);
-        stopIntent.setAction(RadioPlayerFragment.ACTION_STOP);
-        PendingIntent pstopIntent = PendingIntent.getService(this, 0,
-                stopIntent, 0);
-
         Bitmap large_icon = BitmapFactory.decodeResource(this.getResources(),
                 R.drawable.large_icon_bw);
 
@@ -703,7 +690,7 @@ public class RadioPlayerService extends Service {
     /**
      * Try to retrieve metadata from shoutcast/icecast server
      *
-     * @param url
+     * @param url Url with metadata
      */
     private void refreshMetadata(String url) {
         Log.d(LOG_TAG, "refreshMetadata()");
@@ -728,9 +715,8 @@ public class RadioPlayerService extends Service {
                     @Override
                     public void run() {
                         String songTitle = "";
-                        String artistName = "";
                         try {
-                            songTitle = streamMeta.getStreamTitle();
+                            songTitle = new String(streamMeta.getStreamTitle().getBytes("ISO-8859-1"), "UTF-8");
                         } catch (IOException e) {
                             Log.d(LOG_TAG, "No song title info!");
                             return;
@@ -747,11 +733,6 @@ public class RadioPlayerService extends Service {
             }
         }).start();
 
-    }
-
-
-    public static MediaPlayer getMediaPlayer() {
-        return mediaPlayer;
     }
 
 
@@ -786,11 +767,6 @@ public class RadioPlayerService extends Service {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                int hour = playingSecs / 3600;
-                int min = (playingSecs % 3600) / 60;
-                int res_sec = playingSecs % 60;
-
-                String time = String.format("%02d:%02d:%02d", hour, min, res_sec);
 
                 if (playingTimeRunning) {
                     playingSecs++;

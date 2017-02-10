@@ -1,7 +1,6 @@
 package com.example.otatar.birplayer;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -23,14 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.security.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 
 /**
  * Created by o.tatar on 22-Sep-16.
@@ -66,7 +60,7 @@ public class RadioStationLab {
     /**
      * Returns single instance of RadioStationLab class
      *
-     * @param activity
+     * @param activity Activity
      * @return radioStationLab
      */
     public static RadioStationLab get(Activity activity) {
@@ -93,7 +87,7 @@ public class RadioStationLab {
     /**
      * Setting reference to radioStationRefreshable
      *
-     * @param activity
+     * @param activity Activity
      */
     public void setRadioStationRefreshable(RadioStationRefreshable activity) {
         radioStationRefreshable = activity;
@@ -103,7 +97,7 @@ public class RadioStationLab {
     /**
      * Private constructor
      *
-     * @param activity
+     * @param activity Activity
      */
     private RadioStationLab(Activity activity) {
 
@@ -116,7 +110,7 @@ public class RadioStationLab {
     /**
      * Inserts radio stations data into database, from json string
      *
-     * @param jsonString
+     * @param jsonString JSON String
      */
     private void insertRadioStations(String jsonString) throws IOException, JSONException {
 
@@ -256,7 +250,7 @@ public class RadioStationLab {
     /**
      * Fetch radio station data from web and store it in database
      *
-     * @param url
+     * @param url Server URL
      */
     public void getRadioStationsWeb(String url) {
 
@@ -316,7 +310,7 @@ public class RadioStationLab {
         /**
          * Fetches html content from given url
          *
-         * @param url
+         * @param url URL String
          * @return html
          */
         public String fetchHttp(String url) throws IOException {
@@ -351,8 +345,8 @@ public class RadioStationLab {
     /**
      * Updates favorite radio station in database
      *
-     * @param radioStation
-     * @param favorite
+     * @param radioStation RadioStation object
+     * @param favorite If radio station if favorite
      */
     public static void updateFavoriteRadioStation(final RadioStation radioStation, final boolean favorite) {
 
@@ -395,7 +389,7 @@ public class RadioStationLab {
     /**
      * Filters list of all radio stations for radio station with specific genre
      *
-     * @param genres
+     * @param genres String array of genres
      */
     public static ArrayList<RadioStation> filterRadioStationsByGenre(String[] genres) {
 
@@ -422,7 +416,7 @@ public class RadioStationLab {
     /**
      * Filters list of all radio stations for radio station with specific location
      *
-     * @param location
+     * @param location Location
      */
     public static ArrayList<RadioStation> filterRadioStationsByLocation(String location) {
 
@@ -461,7 +455,7 @@ public class RadioStationLab {
 
     /**
      * Filters list of all radio stations by name
-     * @param name
+     * @param name Name of radio station
      */
     public static ArrayList<RadioStation> filterRadioStationByName(String name) {
 
