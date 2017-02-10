@@ -4,10 +4,18 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.transition.CircularPropagation;
+import android.util.Log;
 
 import com.example.otatar.birplayer.database.RadioStationDbSchema.RadioStationTable;
 import com.example.otatar.birplayer.database.RadioStationDbSchema.FavoriteTable;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 
 /**
@@ -17,9 +25,15 @@ public class RadioStationDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "bir_player";
     private static final int VERSION = 1;
+    private static final String LOCAL_JSON_FILE = "radio_stations_json.json";
+
+    private Context context;
+
 
     public RadioStationDatabaseHelper(Context context) {
         super(context, DB_NAME, null, VERSION);
+
+        this.context = context;
     }
 
     @Override
@@ -37,31 +51,35 @@ public class RadioStationDatabaseHelper extends SQLiteOpenHelper {
                    RadioStationTable.Cols.FAVORITE + " INTEGER DEFAULT 0" + ")"
         );
 
-        //Put some values into database
-        ContentValues values = new ContentValues();
-        values.put(RadioStationTable.Cols.SID, 1);
-        values.put(RadioStationTable.Cols.STATION_NAME, "Radio Ba");
-        values.put(RadioStationTable.Cols.STATION_GENRE,"Various");
-        values.put(RadioStationTable.Cols.STATION_URL,"wwww.radioba.ba");
-        values.put(RadioStationTable.Cols.STATION_LOCATION,"Sarajevo");
-        values.put(RadioStationTable.Cols.LISTEN_URL,"http://streaming.radioba.ba:10002/radio_Ba");
-        values.put(RadioStationTable.Cols.LISTEN_TYPE,1);
+        String jsonString = getLocalJsonFile(LOCAL_JSON_FILE);
 
-        // Insert into database
-        db.insert(RadioStationTable.DB_TABLE_NAME, null, values);
+        try {
 
-        //Put some values into database
-        values = new ContentValues();
-        values.put(RadioStationTable.Cols.SID, 2);
-        values.put(RadioStationTable.Cols.STATION_NAME, "RSG");
-        values.put(RadioStationTable.Cols.STATION_GENRE,"pop, zabavna");
-        values.put(RadioStationTable.Cols.STATION_URL,"wwww.rsg.ba");
-        values.put(RadioStationTable.Cols.STATION_LOCATION,"Sarajevo");
-        values.put(RadioStationTable.Cols.LISTEN_URL,"http://195.222.57.33:8090/");
-        values.put(RadioStationTable.Cols.LISTEN_TYPE,0);
+            //Parsing json
+            JSONObject jsonBody = new JSONObject(jsonString);
 
-        // Insert into database
-        db.insert(RadioStationTable.DB_TABLE_NAME, null, values);
+            JSONObject stationsJsonObject = jsonBody.getJSONObject("radio_stations");
+            JSONArray stationsJsonArray = stationsJsonObject.getJSONArray("stations");
+
+            for (int i = 0; i < stationsJsonArray.length(); i++) {
+
+                JSONObject stationJsonObject = stationsJsonArray.getJSONObject(i);
+
+                //Construct ContentValues
+                ContentValues values = new ContentValues();
+                values.put(RadioStationTable.Cols.SID, stationJsonObject.getInt("id"));
+                values.put(RadioStationTable.Cols.STATION_NAME, stationJsonObject.getString("station_name"));
+                values.put(RadioStationTable.Cols.STATION_GENRE, stationJsonObject.getString("station_genre"));
+                values.put(RadioStationTable.Cols.STATION_URL, stationJsonObject.getString("station_url"));
+                values.put(RadioStationTable.Cols.STATION_LOCATION, stationJsonObject.getString("station_location"));
+                values.put(RadioStationTable.Cols.LISTEN_URL, stationJsonObject.getString("listen_url"));
+                values.put(RadioStationTable.Cols.LISTEN_TYPE, stationJsonObject.getString("listen_type"));
+
+                // Insert into database
+                db.insert(RadioStationTable.DB_TABLE_NAME, null, values);
+
+            }
+        } catch (JSONException e) {}
 
         // We need favorite table
         db.execSQL("CREATE TABLE " + FavoriteTable.DB_TABLE_NAME + "(" +
@@ -74,6 +92,32 @@ public class RadioStationDatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+
+    }
+
+
+    /**
+     * Gets local file with json data from assets
+     * @param filename Filename String
+     * @return JSON string
+     */
+    private String getLocalJsonFile(String filename) {
+
+        String json;
+        try {
+            InputStream inputStream = context.getAssets().open(filename);
+            int size = inputStream.available();
+            byte[] buffer = new byte[size];
+            inputStream.read(buffer);
+            inputStream.close();
+
+            json = new String(buffer, "UTF-8");
+
+        } catch (IOException e) {
+            return null;
+        }
+
+        return json;
 
     }
 }

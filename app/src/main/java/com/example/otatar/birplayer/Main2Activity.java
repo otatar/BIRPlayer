@@ -9,6 +9,7 @@ import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.res.ResourcesCompat;
+import android.support.v4.view.MotionEventCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -160,11 +161,6 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
-
-        //Retrieve thing from bundle
-//        if (savedInstanceState != null) {
-//            selectedRadioStationPosition = savedInstanceState.getInt(SELECTED_POSITION);
-//        }
 
         // Start service, if it has't been started
         startService(RadioPlayerService.newStartIntent(this));
@@ -527,5 +523,33 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         Button dialogBtn =  dialog1.getButton(DialogInterface.BUTTON_POSITIVE);
         dialogBtn.setTextColor(Color.BLUE);
     }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event){
+
+        int action = MotionEventCompat.getActionMasked(event);
+
+        switch(action) {
+            case (MotionEvent.ACTION_DOWN) :
+                Log.d(LOG_TAG,"Action was DOWN");
+                return true;
+            case (MotionEvent.ACTION_MOVE) :
+                Log.d(LOG_TAG,"Action was MOVE");
+                return true;
+            case (MotionEvent.ACTION_UP) :
+                Log.d(LOG_TAG,"Action was UP");
+                return true;
+            case (MotionEvent.ACTION_CANCEL) :
+                Log.d(LOG_TAG,"Action was CANCEL");
+                return true;
+            case (MotionEvent.ACTION_OUTSIDE) :
+                Log.d(LOG_TAG,"Movement occurred outside bounds " +
+                        "of current screen element");
+                return true;
+            default :
+                return super.onTouchEvent(event);
+        }
+    }
+
 
 }

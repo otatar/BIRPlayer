@@ -56,7 +56,6 @@ public class RadioStationLab {
     private static long lastRefreshTimestamp;
 
 
-
     /**
      * Returns single instance of RadioStationLab class
      *
@@ -270,28 +269,28 @@ public class RadioStationLab {
         @Override
         protected String doInBackground(String... params) {
 
-           //Refresh radio station if it was over half an hour since last refresh
-           if ((System.currentTimeMillis()/1000 - lastRefreshTimestamp) > 1800) {
-               try {
-                   //Fetch radio station data from server
-                   Log.d(LOG_TAG, "Server: " + params[0]);
-                   jsonString = fetchHttp(params[0]);
+            //Refresh radio station if it was over half an hour since last refresh
+            if ((System.currentTimeMillis() / 1000 - lastRefreshTimestamp) > 1800) {
+                try {
+                    //Fetch radio station data from server
+                    Log.d(LOG_TAG, "Server: " + params[0]);
+                    jsonString = fetchHttp(params[0]);
 
-                   //Parse and insert into database
-                   insertRadioStations(jsonString);
+                    //Parse and insert into database
+                    insertRadioStations(jsonString);
 
-                   //We have refreshed
-                   lastRefreshTimestamp = System.currentTimeMillis()/1000;
+                    //We have refreshed
+                    lastRefreshTimestamp = System.currentTimeMillis() / 1000;
 
 
-               } catch (IOException e) {
-                   Log.e(LOG_TAG, "Cannot load data from server: " + e.toString());
-                   jsonString = e.toString();
-               } catch (JSONException e) {
-                   Log.e(LOG_TAG, e.toString());
-                   jsonString = e.toString();
-               }
-           }
+                } catch (IOException e) {
+                    Log.e(LOG_TAG, "Cannot load data from server: " + e.toString());
+                    jsonString = e.toString();
+                } catch (JSONException e) {
+                    Log.e(LOG_TAG, e.toString());
+                    jsonString = e.toString();
+                }
+            }
 
             //Load from database in ArrayList
             RadioStationLab.radioStationsAll.clear();
@@ -346,7 +345,7 @@ public class RadioStationLab {
      * Updates favorite radio station in database
      *
      * @param radioStation RadioStation object
-     * @param favorite If radio station if favorite
+     * @param favorite     If radio station if favorite
      */
     public static void updateFavoriteRadioStation(final RadioStation radioStation, final boolean favorite) {
 
@@ -455,6 +454,7 @@ public class RadioStationLab {
 
     /**
      * Filters list of all radio stations by name
+     *
      * @param name Name of radio station
      */
     public static ArrayList<RadioStation> filterRadioStationByName(String name) {
