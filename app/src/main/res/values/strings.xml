@@ -35,6 +35,12 @@
     <string name="radio_station">Radio Station</string>
     <string name="radio_url">URL</string>
     <string name="radio_genre">Genre</string>
+    <string name="connecting_string">Učitavanje...</string>
+    <string name="error_string">Greška!</string>
+    <string name="playing_string">Svira...</string>
+    <string name="stopped_string">Stopirano</string>
+    <string name="paused_string">Pauzirano</string>
+    <string name="buffering_string">Učitavanje...</string>
 
     <string-array name="drawer_items">
         <item>Sve radio stanice</item>
@@ -42,6 +48,11 @@
         <item>Zabavna</item>
         <item>Narodna</item>
         <item>Sarajevo</item>
+    </string-array>
+
+    <string-array name="drawer_footer_items">
+        <item>O aplikaciji</item>
+        <item>Izlaz</item>
     </string-array>
 
 

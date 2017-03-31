@@ -1,19 +1,448 @@
-{ "radio_stations": { "stations": [ { "station_location": "Sarajevo", "id": 1, "station_url": "www.radioba.ba", "listen_type": 1, "station_genre": "pop, folk, zabavna, narodna", "station_name": "Radio Ba", "listen_url": "http://streaming.radioba.ba:10002/radio_Ba" },
-                                    { "station_location": "Sarajevo", "id": 2, "station_url": "www.rsg.ba", "listen_type": 0, "station_genre": "pop, zabavna, urban", "station_name": "RSG", "listen_url": "http://195.222.57.33:8090" },
-                                    { "station_location": "Bijeljina", "id": 3, "station_url": "www.radiobn.net", "listen_type": 0, "station_genre": "narodna, folk", "station_name": "Radio BN", "listen_url": "http://37.59.224.214:8522" },
-                                    { "station_location": "Sarajevo", "id": 4, "station_url": "www.antena.ba", "listen_type": 0, "station_genre": "pop, zabavna, urban", "station_name": "Radio Antena", "listen_url": "http://195.222.57.33:8070" },
-                                    { "station_location": "Sarajevo", "id": 5, "station_url": "www.bir.ba", "listen_type": 0, "station_genre": "vjerski, ethnic", "station_name": "Radio BIR", "listen_url": "http://185.6.106.9:8010" },
-                                    { "station_location": "Pale", "id": 6, "station_url": "www.radio-osm.com", "listen_type": 0, "station_genre": "narodna, ethnic", "station_name": "Radio OSM", "listen_url": "http://mobile.ba:8000" },
-                                    { "station_location": "Sarajevo", "id": 7, "station_url": "www.radiom.ba", "listen_type": 0, "station_genre": "zabavna, pop, rock, urban", "station_name": "Radio M", "listen_url": "http://195.222.33.217:8026/" },
-                                    { "station_location": "Tuzla", "id": 9, "station_url": "http://radiokameleon.ba/", "listen_type": 0, "station_genre": "zabavna, rock, pop", "station_name": "Radio Kameleon", "listen_url": "http://78.47.39.139:8100" },
-                                    { "station_location": "Sarajevo", "id": 10, "station_url": "www.kalmanradio.ba", "listen_type": 0, "station_genre": "narodna,folk, zabavna", "station_name": "Kalman Radio", "listen_url": "http://50.7.70.58:8698" },
-                                    { "station_location": "Sarajevo", "id": 11, "station_url": "https://www.facebook.com/Radio8Sarajevo/", "listen_type": 0, "station_genre": "narodna, folk, zabavna", "station_name": "Radio 8", "listen_url": "http://217.75.197.114:9000" },
-                                    { "station_location": "Zenica", "id": 12, "station_url": "null", "listen_type": 0, "station_genre": "folk, narodna", "station_name": "Radio BM", "listen_url": "http://195.222.33.217:8070/" },
-                                    { "station_location": "Sarajevo", "id": 13, "station_url": "www.efm.ba", "listen_type": 0, "station_genre": "pop, zabavna, rock, urban, alternativna", "station_name": "EFM Radio", "listen_url": "http://206.190.135.28:8776" },
-                                    { "station_location": "Sarajevo", "id": 14, "station_url": "http://www.rtvfbih.ba", "listen_type": 1, "station_genre": "zabavna, narodna, info", "station_name": "Federalni Radio", "listen_url": "rtsp://217.75.200.102:7070/broadcast/federalni.rm" },
-                                    { "station_location": "Sarajevo", "id": 15, "station_url": "www.bhrt.ba", "listen_type": 3, "station_genre": "pop, zabavna, info", "station_name": "BH Radio 1", "listen_url": "mms://media.bih.net.ba/bhradio1/" },
-                                    { "station_location": "Ilidza", "id": 16, "station_url": "http://www.radioask.co.ba/", "listen_type": 0, "station_genre": "folk, narodna", "station_name": "ASK Radio", "listen_url": "http://radio.epn.ba:8010" },
-                                    { "station_location": "Zenica", "id": 17, "station_url": "http://www.radioritam.ba/", "listen_type": 0, "station_genre": "pop, zabavna", "station_name": "Ritam Radio Zenica", "listen_url": "http://50.7.77.114:8059" },
-                                    { "station_location": "Banja Luka", "id": 18, "station_url": "http://www.radioritam.ba/", "listen_type": 0, "station_genre": "zabavna, pop", "station_name": "Ritam Radio Banja Luka", "listen_url": "http://50.7.77.114:8061/" },
-                                    { "station_location": "Visoko", "id": 19, "station_url": "http://www.radioritam.ba/", "listen_type": 0, "station_genre": "zabavna, pop", "station_name": "Radio Ritam Visoko", "listen_url": "http://50.7.77.114:8057" },
-                                    { "station_location": "Mostar", "id": 20, "station_url": "http://www.radioritam.ba/", "listen_type": 0, "station_genre": "zabavna, pop", "station_name": "Ritam Radio Mostar", "listen_url": "http://50.7.77.114:8065" } ], "quantity": "19" } }
+{
+  "radio_stations": {
+    "stations": [
+      {
+        "station_location": "Sarajevo",
+        "id": 1,
+        "station_url": "www.radioba.ba",
+        "listen_type": 1,
+        "station_genre": "pop, folk, zabavna, narodna",
+        "station_name": "Radio Ba",
+        "listen_url": "http://streaming.radioba.ba:10002/radio_Ba"
+      },
+      {
+        "station_location": "Sarajevo",
+        "id": 2,
+        "station_url": "www.rsg.ba",
+        "listen_type": 0,
+        "station_genre": "pop, zabavna, urban",
+        "station_name": "RSG",
+        "listen_url": "http://195.222.57.33:8090"
+      },
+      {
+        "station_location": "Bijeljina",
+        "id": 3,
+        "station_url": "www.radiobn.net",
+        "listen_type": 0,
+        "station_genre": "narodna, folk",
+        "station_name": "Radio BN",
+        "listen_url": "http://37.59.224.214:8522"
+      },
+      {
+        "station_location": "Sarajevo",
+        "id": 4,
+        "station_url": "www.antena.ba",
+        "listen_type": 0,
+        "station_genre": "pop, zabavna, urban",
+        "station_name": "Radio Antena",
+        "listen_url": "http://195.222.57.33:8070"
+      },
+      {
+        "station_location": "Sarajevo",
+        "id": 5,
+        "station_url": "www.bir.ba",
+        "listen_type": 0,
+        "station_genre": "vjerski, ethnic",
+        "station_name": "Radio BIR",
+        "listen_url": "http://185.6.106.9:8010"
+      },
+      {
+        "station_location": "Pale",
+        "id": 6,
+        "station_url": "www.radio-osm.com",
+        "listen_type": 0,
+        "station_genre": "narodna, ethnic",
+        "station_name": "Radio OSM",
+        "listen_url": "http://mobile.ba:8000"
+      },
+      {
+        "station_location": "Sarajevo",
+        "id": 7,
+        "station_url": "www.radiom.ba",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, rock, urban",
+        "station_name": "Radio M",
+        "listen_url": "http://195.222.33.217:8026/"
+      },
+      {
+        "station_location": "Tuzla",
+        "id": 9,
+        "station_url": "http://radiokameleon.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, rock, pop",
+        "station_name": "Radio Kameleon",
+        "listen_url": "http://78.47.39.139:8100"
+      },
+      {
+        "station_location": "Sarajevo",
+        "id": 10,
+        "station_url": "www.kalmanradio.ba",
+        "listen_type": 0,
+        "station_genre": "narodna,folk, zabavna",
+        "station_name": "Kalman Radio",
+        "listen_url": "http://50.7.70.58:8698"
+      },
+      {
+        "station_location": "Sarajevo",
+        "id": 11,
+        "station_url": "https://www.facebook.com/Radio8Sarajevo/",
+        "listen_type": 0,
+        "station_genre": "narodna, folk, zabavna",
+        "station_name": "Radio 8",
+        "listen_url": "http://217.75.197.114:9000"
+      },
+      {
+        "station_location": "Zenica",
+        "id": 12,
+        "station_url": "null",
+        "listen_type": 0,
+        "station_genre": "folk, narodna",
+        "station_name": "Radio BM",
+        "listen_url": "http://195.222.33.217:8070/"
+      },
+      {
+        "station_location": "Sarajevo",
+        "id": 13,
+        "station_url": "www.efm.ba",
+        "listen_type": 0,
+        "station_genre": "pop, zabavna, rock, urban, alternativna",
+        "station_name": "EFM Radio",
+        "listen_url": "http://206.190.135.28:8776"
+      },
+      {
+        "station_location": "Ilidza",
+        "id": 16,
+        "station_url": "http://www.radioask.co.ba/",
+        "listen_type": 0,
+        "station_genre": "folk, narodna",
+        "station_name": "ASK Radio",
+        "listen_url": "http://radio.epn.ba:8010"
+      },
+      {
+        "station_location": "Zenica",
+        "id": 17,
+        "station_url": "http://www.radioritam.ba/",
+        "listen_type": 0,
+        "station_genre": "pop, zabavna",
+        "station_name": "Ritam Radio Zenica",
+        "listen_url": "http://50.7.77.114:8059"
+      },
+      {
+        "station_location": "Banja Luka",
+        "id": 18,
+        "station_url": "http://www.radioritam.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop",
+        "station_name": "Ritam Radio Banja Luka",
+        "listen_url": "http://50.7.77.114:8061/"
+      },
+      {
+        "station_location": "Visoko",
+        "id": 19,
+        "station_url": "http://www.radioritam.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop",
+        "station_name": "Radio Ritam Visoko",
+        "listen_url": "http://50.7.77.114:8057"
+      },
+      {
+        "station_location": "Mostar",
+        "id": 20,
+        "station_url": "http://www.radioritam.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop",
+        "station_name": "Ritam Radio Mostar",
+        "listen_url": "http://50.7.77.114:8065"
+      },
+      {
+        "station_location": "Mostar",
+        "id": 21,
+        "station_url": "http://www.obican.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop",
+        "station_name": "Običan Radio",
+        "listen_url": "http://79.142.73.139:2050"
+      },
+      {
+        "station_location": "Konjic",
+        "id": 22,
+        "station_url": "https://bs-ba.facebook.com/radio.konjic",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, urban",
+        "station_name": "Radio Konjic",
+        "listen_url": "http://50.22.219.37:16634/"
+      },
+      {
+        "station_location": "Travnik",
+        "id": 23,
+        "station_url": "http://www.tntradio.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, urban",
+        "station_name": "TNT Radio",
+        "listen_url": "http://server1.tnt.ba:10100"
+      },
+      {
+        "station_location": "Bihać",
+        "id": 24,
+        "station_url": "http://www.rtvbihac.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, urban, rock",
+        "station_name": "Radio Bihać",
+        "listen_url": "http://188.40.62.20:8004/"
+      },
+      {
+        "station_location": "Sarajevo",
+        "id": 25,
+        "station_url": "http://otvorenamreza.ba",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, urban, rock",
+        "station_name": "Radio Otvorena mreža",
+        "listen_url": "http://46.28.53.198:7088/"
+      },
+      {
+        "station_location": "Sarajevo",
+        "id": 26,
+        "station_url": "http://www.radiocarsija.com/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, urban, narodna, etno",
+        "station_name": "Radio Čaršija",
+        "listen_url": "http://carsija.topstream.net:19406"
+      },
+      {
+        "station_location": "Banja Luka",
+        "id": 27,
+        "station_url": "www.bigradiobl.com",
+        "listen_type": 1,
+        "station_genre": "zabavna, pop, urban, rock",
+        "station_name": "Radio BIG",
+        "listen_url": "http://188.124.211.103:8100//big1"
+      },
+      {
+        "station_location": "Sapna",
+        "id": 28,
+        "station_url": "http://www.radioglasdrine.com/",
+        "listen_type": 0,
+        "station_genre": "folk, narodna, etno",
+        "station_name": "Radio Glas Drine",
+        "listen_url": "http://77.74.231.21:8028"
+      },
+      {
+        "station_location": "Doboj",
+        "id": 29,
+        "station_url": "http://www.radiodzungla.net/",
+        "listen_type": 0,
+        "station_genre": "folk, narodna",
+        "station_name": "Radio Džungla",
+        "listen_url": "5.9.25.50:9302"
+      },
+      {
+        "station_location": "Banja Luka",
+        "id": 30,
+        "station_url": "http://www.nesradio.com/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, urban, rock",
+        "station_name": "Radio NES",
+        "listen_url": "http://188.40.62.20:8070/"
+      },
+      {
+        "station_location": "Sarajevo",
+        "id": 31,
+        "station_url": "http://www.radiomix.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, urban, rock",
+        "station_name": "Radio Mix",
+        "listen_url": "http://195.222.57.33:8066"
+      },
+      {
+        "station_location": "Cazin",
+        "id": 32,
+        "station_url": "http://xat.com/Rajska_Dolina",
+        "listen_type": 0,
+        "station_genre": "narodna, folk",
+        "station_name": "Radio Rajska Dolina",
+        "listen_url": "http://streaming.4-p.org:8012"
+      },
+      {
+        "station_location": "Livno",
+        "id": 33,
+        "station_url": "http://www.radiolivno.info/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, rock, narodna",
+        "station_name": "Radio Livno",
+        "listen_url": "http://178.209.2.100:7090/"
+      },
+      {
+        "station_location": "Srebrenica",
+        "id": 34,
+        "station_url": "http://www.rtvsrebrenica.org/",
+        "listen_type": 0,
+        "station_genre": "narodna, folk, pop, urban",
+        "station_name": "Radio Srebrenica",
+        "listen_url": "http://rtvsrebrenica.linkpc.net:8000/"
+      },
+      {
+        "station_location": "Sarajevo",
+        "id": 35,
+        "station_url": "",
+        "listen_type": 0,
+        "station_genre": "narodna, folk",
+        "station_name": "Radio Ambis",
+        "listen_url": "http://philae.dihostnet.com:8434/"
+      },
+      {
+        "station_location": "Trebinje",
+        "id": 36,
+        "station_url": "",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, rock",
+        "station_name": "Radio Padrino",
+        "listen_url": "http://stream.radiopadrino.com:2035"
+      },
+      {
+        "station_location": "Bileća",
+        "id": 37,
+        "station_url": "http://radio.bilecainfo.com/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop",
+        "station_name": "Radio Bileća",
+        "listen_url": "79.142.73.139:2010"
+      },
+      {
+        "station_location": "Tešanj",
+        "id": 38,
+        "station_url": "http://zosradio.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop",
+        "station_name": "Radio ZOS",
+        "listen_url": "http://radio.daj.ba:8000"
+      },
+      {
+        "station_location": "Sarajevo",
+        "id": 39,
+        "station_url": "http://www.amplituda.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop",
+        "station_name": "Radio Amplituda",
+        "listen_url": "http://37.59.28.208:8280"
+      },
+      {
+        "station_location": "Jelah",
+        "id": 40,
+        "station_url": "http://www.antena-radio.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, narodna, folk",
+        "station_name": "Radio Antena Jelah",
+        "listen_url": "79.142.73.139:2010"
+      },
+      {
+        "station_location": "Zenica",
+        "id": 41,
+        "station_url": "http::/live.narodni.ba",
+        "listen_type": 0,
+        "station_genre": "folk, narodna",
+        "station_name": "Narodni Radio",
+        "listen_url": "http://server1.tnt.ba:10200"
+      },
+      {
+        "station_location": "Ljubuški",
+        "id": 42,
+        "station_url": "http://www.radioljubuski.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop",
+        "station_name": "Radio Ljubuški",
+        "listen_url": "http://46.28.53.198:7004/live"
+      },
+      {
+        "station_location": "Mostar",
+        "id": 14,
+        "station_url": "http://www.rdv.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop",
+        "station_name": "Radio Dobre Vibracije",
+        "listen_url": "http://74.63.72.20:8851/"
+      },
+      {
+        "station_location": "Lukavac",
+        "id": 15,
+        "station_url": "http://www.rtvlukavac.ba/",
+        "listen_type": 0,
+        "station_genre": "narodna, folk",
+        "station_name": "Radio Lukavac",
+        "listen_url": "http://195.222.33.217:8022/"
+      },
+      {
+        "station_location": "Kupres",
+        "id": 43,
+        "station_url": "http://www.kupreskiradio.com/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, narodna, etno",
+        "station_name": "Kupreški Radio",
+        "listen_url": "http://178.209.2.100:10000/live.mp3"
+      },
+      {
+        "station_location": "Prozor-Rama",
+        "id": 44,
+        "station_url": "www.rama-prozor.info",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop",
+        "station_name": "Radio Rama",
+        "listen_url": "http://178.209.2.100:7040/"
+      },
+      {
+        "station_location": "Bijeljina",
+        "id": 45,
+        "station_url": "http://www.radiobobar.com.com/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, narodna, folk",
+        "station_name": "Bobar Radio",
+        "listen_url": "http://51.254.61.148:9111"
+      },
+      {
+        "station_location": "Tuzla",
+        "id": 46,
+        "station_url": "http://www.rtv7.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, rock, urban",
+        "station_name": "Radio 7",
+        "listen_url": "http://195.222.33.217:8016/"
+      },
+      {
+        "station_location": "Zenica",
+        "id": 47,
+        "station_url": "http://www.zenit.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, rock, urban",
+        "station_name": "Radio Zenit",
+        "listen_url": "http://5.189.168.133:8080/"
+      },
+      {
+        "station_location": "Vogošća",
+        "id": 48,
+        "station_url": "http://www.rtvvogosca.ba/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, rock, narodna, folk",
+        "station_name": "Radio Vogošća",
+        "listen_url": "http://188.40.62.20:8018"
+      },
+      {
+        "station_location": "Tomislavgrad",
+        "id": 49,
+        "station_url": "http://www.radiotg.com/",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, etno",
+        "station_name": "Radio Tomislavgrad",
+        "listen_url": "http://178.209.2.100:7100/"
+      },
+      {
+        "station_location": "Foča",
+        "id": 50,
+        "station_url": "",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, folk, narodna",
+        "station_name": "Radio Foča",
+        "listen_url": "http://188.40.62.20:8068/"
+      }
+    ],
+    "quantity": "50"
+  }
+}
