@@ -9,7 +9,9 @@ import android.content.ServiceConnection;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -17,16 +19,22 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.ActionMode;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
@@ -37,7 +45,13 @@ import net.komiso.otatar.biplayer.R;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.lang.reflect.Array;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
 
 import es.claucookie.miniequalizerlibrary.EqualizerView;
 
@@ -65,14 +79,22 @@ public class RadioStationListFragment extends Fragment {
     //Swipe refresh
     private SwipeRefreshLayout swipeRefresh;
 
+    private ActionMode actionMode;
+
     //Recycler View
     private RecyclerView recyclerView;
 
     //Recycler View Adapter
     private RadioStationAdapter radioStationAdapter;
 
+    //Recycler View Adapter (for recorded files)
+    private RecordedRadioStationAdapter recordedRadioStationAdapter;
+
     /* Array list that contains all radio station objects */
     private ArrayList<RadioStation> radioStationsList = new ArrayList<>();
+
+    /* Array list that contains all recorded radio station files */
+    private ArrayList<File> recordedRadioStationList = new ArrayList<>();
 
     /* Flag selector for list type */
     private Boolean isRadioStationListPartial = false;
@@ -86,11 +108,19 @@ public class RadioStationListFragment extends Fragment {
     /* Radio Station selected listener */
     private OnRadioStationSelectedListener radioStationSelectedListener;
 
+    /* Recording radio station selected listener */
+    private OnRecordingSelectedListener recordingSelectedListener;
+
     /* */
     public static int list_type = 0;
 
     /* Variable to track selected items in recycler view of stations*/
     private static RadioStation selectedRadioStation = null;
+
+    /* List of selected recordings in action mode */
+    private HashSet<Integer> selectedRecordings = new HashSet<>();
+
+    private static boolean recordingPlaying = false;
 
 
     /**
@@ -102,6 +132,14 @@ public class RadioStationListFragment extends Fragment {
 
     public interface OnRadioStationSelectedAndPlayListener {
         void onRadioStationSelectedAndPlay(RadioStation radioStation, Boolean stopRadioStation);
+    }
+
+    public interface OnRecordingPlayListener {
+        void onRecordingPlay(String recFilePath, Boolean stopRadioStation);
+    }
+
+    public interface OnRecordingSelectedListener {
+        void onRecordingSelected(int postition, ArrayList<File> recordedRadioStationList);
     }
 
     /**
@@ -256,16 +294,22 @@ public class RadioStationListFragment extends Fragment {
                 if (bundle.getString(RadioPlayerFragment.STATUS).equals(RadioPlayerService.MP_PLAYING)) {
 
                     Log.d(LOG_TAG, "Selected radio station is playing");
-                    selectedRadioStation.setPlaying(true);
-                    selectedRadioStation.setConnecting(false);
+                    recordingPlaying = true;
+                    if (selectedRadioStation != null) {
+                        selectedRadioStation.setPlaying(true);
+                        selectedRadioStation.setConnecting(false);
+                    }
 
                 } else if ((bundle.getString(RadioPlayerFragment.STATUS).equals(RadioPlayerService.MP_PAUSED))
                         || (bundle.getString(RadioPlayerFragment.STATUS).equals(RadioPlayerService.MP_STOPPED))) {
 
                     Log.d(LOG_TAG, "Selected radio station is stopped");
+                    recordingPlaying = false;
 //                    selectedRadioStation.setPlaying(false);
-                    selectedRadioStation.setConnecting(false);
-                    RadioPlayerFragment.stopAllRadioStations(radioStationsList);
+                    if (selectedRadioStation != null) {
+                        selectedRadioStation.setConnecting(false);
+                        RadioPlayerFragment.stopAllRadioStations(radioStationsList);
+                    }
 
                 } else if (bundle.getString(RadioPlayerFragment.STATUS).equals(RadioPlayerService.MP_CONNECTING)) {
 
@@ -275,8 +319,15 @@ public class RadioStationListFragment extends Fragment {
 
             } else if (msg.what == RadioPlayerFragment.SEND_ERROR) {
 
+                recordingPlaying = false;
                 selectedRadioStation.setConnecting(false);
                 selectedRadioStation.setPlaying(false);
+
+            } else if (msg.what == RadioPlayerFragment.SEND_COMPLETION) {
+
+                Log.d(LOG_TAG, "Completion");
+                recordingPlaying = false;
+
             }
 
             recyclerView.getAdapter().notifyDataSetChanged();
@@ -368,6 +419,210 @@ public class RadioStationListFragment extends Fragment {
         public int getItemCount() {
             return radioStationList.size();
         }
+    }
+
+
+    /**
+     * Recycler Adapter Class for recorded radio stations
+     */
+    private class RecordedRadioStationAdapter extends RecyclerView.Adapter<RecordedRadioStationHolder> {
+
+        private ArrayList<File> recordedRadioStationList;
+        private Activity activity;
+
+        public RecordedRadioStationAdapter(Activity activity, ArrayList<File> recordedRadioStationList) {
+            this.recordedRadioStationList = recordedRadioStationList;
+            this.activity = activity;
+
+        }
+
+        //Setter for radioStationList
+        public void seRecordedRadioStationList(ArrayList<File> recordedRadioStationList) {
+            this.recordedRadioStationList = recordedRadioStationList;
+        }
+
+        @Override
+        public RecordedRadioStationHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+
+            LayoutInflater layoutInflater = LayoutInflater.from(activity);
+            View view = layoutInflater.inflate(R.layout.list_recorded_radio_station, parent, false);
+
+            return new RecordedRadioStationHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(final RecordedRadioStationHolder holder, final int position) {
+
+            final File recordedRadioStation = recordedRadioStationList.get(position);
+
+
+            //Click listener
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    //Let the holder deal further with click
+                    holder.onClick(v);
+
+                }
+            });
+
+            holder.bindRecordedRadioStation(recordedRadioStation, this.recordedRadioStationList, position);
+
+        }
+
+        @Override
+        public int getItemCount() {
+            return recordedRadioStationList.size();
+        }
+    }
+
+    /**
+     * Class needed for recycler view
+     */
+    private class RecordedRadioStationHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+
+        private TextView listRecordingName;
+        private TextView listRecordingDuration;
+        private TextView listRecordingDate;
+        private ToggleButton playPauseToggle;
+        private TextView listFormatInfo;
+        private CheckBox listCheckBox;
+
+        public RecordedRadioStationHolder(final View itemView) {
+            super(itemView);
+
+            listRecordingName = (TextView) itemView.findViewById(R.id.list_recording_filename);
+            listRecordingDuration = (TextView) itemView.findViewById(R.id.list_recording_duration);
+            listRecordingDate = (TextView) itemView.findViewById(R.id.list_recording_date);
+            playPauseToggle = (ToggleButton) itemView.findViewById(R.id.button_play_pause);
+            listFormatInfo = (TextView) itemView.findViewById(R.id.list_format_info);
+            listCheckBox = (CheckBox) itemView.findViewById(R.id.list_checkbox);
+
+            //Register holder for onClick events
+            itemView.setOnClickListener(this);
+            itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    Log.d(LOG_TAG, "onLongClick");
+                    if (actionMode == null) actionMode = getActivity().startActionMode(mActionModeCallback);
+                    Log.d(LOG_TAG, "Long pressed on position: " + recyclerView.getChildAdapterPosition(itemView));
+                    selectedRecordings.add(recyclerView.getChildAdapterPosition(itemView));
+                    recyclerView.getAdapter().notifyDataSetChanged();
+                    return false;
+                }
+            });
+
+        }
+
+
+        void bindRecordedRadioStation(final File recordingRadioStation, ArrayList<File> list, final int position) {
+
+            Log.d(LOG_TAG, "bindRecordedRadioStation");
+
+            // Reset typeface
+            listRecordingName.setTypeface(null, Typeface.NORMAL);
+            listRecordingDuration.setTypeface(null, Typeface.NORMAL);
+            listRecordingDate.setTypeface(null, Typeface.NORMAL);
+
+            if (!recordingPlaying) {
+                if (playPauseToggle.isChecked()) {
+                    Log.d(LOG_TAG, "Checked!");
+                    playPauseToggle.setChecked(false);
+                }
+            }
+
+
+            // Set the content of views
+            listRecordingName.setText(recordingRadioStation.getName().substring(0, recordingRadioStation.getName().length() - 4));
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+            listRecordingDate.setText(sdf.format(recordingRadioStation.lastModified()));
+            //Lets compute the duration of mp3
+            MediaMetadataRetriever metaRetriever = new MediaMetadataRetriever();
+            metaRetriever.setDataSource(recordingRadioStation.getAbsolutePath());
+            String duration = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            String bitrate = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+            long dur = Long.parseLong(duration) / 1000;
+            long hour = dur / 3600;
+            long min = (dur % 3600) / 60;
+            long res_sec = dur % 60;
+            String time = String.format("%02d:%02d:%02d", hour, min, res_sec);
+
+            listRecordingDuration.setText("Duration: " + time);
+            listFormatInfo.setText(bitrate + " bps, " + (recordingRadioStation.getName().substring(recordingRadioStation.getName().length() - 3)));
+
+            //If we are in action mode, show check boxes
+            if (actionMode != null) {
+                listCheckBox.setVisibility(View.VISIBLE);
+                //And check it it they are selected
+                if (selectedRecordings.contains(position)) {
+                    listCheckBox.setChecked(true);
+                }
+            } else {
+                listCheckBox.setVisibility(View.GONE);
+                listCheckBox.setChecked(false);
+            }
+
+
+            // Handle clicks on play icon
+            playPauseToggle.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    Log.d(LOG_TAG, "Clicked play button on " + recordingRadioStation.getName() + " recording");
+                    //RadioPlayerFragment.deselectAllRadioStations(radioStationsList);
+                    //RadioPlayerFragment.stopAllRadioStations(radioStationsList);
+                   /* radioStation.setSelected(true);
+                    selectedRadioStation = radioStation;
+                    containerActivity.onRadioStationSelected(radioStationsList.indexOf(radioStation), radioStationsList, false);*/
+
+                    if (playPauseToggle.isChecked()) {
+
+                        Log.d(LOG_TAG, "Play " + recordingRadioStation.getName());
+                        containerActivity.onRecordingPlay(recordingRadioStation.getAbsolutePath(), false);
+                       // radioStation.setConnecting(true);
+
+
+                    } else {
+
+                        Log.d(LOG_TAG, "Pause " + recordingRadioStation.getName());
+                        containerActivity.onRecordingPlay(recordingRadioStation.getAbsolutePath(), true);
+                        //radioStation.setConnecting(false);
+
+                    }
+
+                    //recyclerView.getAdapter().notifyDataSetChanged();
+                }
+            });
+
+
+            //Handle click on checkbox
+            listCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if (isChecked) {
+                        selectedRecordings.add(position);
+                    } else {
+                        selectedRecordings.remove(position);
+                    }
+                }
+            });
+
+        }
+
+        @Override
+        public void onClick(View v) {
+
+            Log.d(LOG_TAG, getClass().getName() + ":onClick");
+            Log.d(LOG_TAG, "Clicked on: " + listRecordingName.getText() + " at position " +
+                    getAdapterPosition());
+
+
+            //Call method on activity
+            recordingSelectedListener.onRecordingSelected(getAdapterPosition(), recordedRadioStationList);
+
+        }
+
     }
 
 
@@ -540,6 +795,11 @@ public class RadioStationListFragment extends Fragment {
      */
     public void filterRadioStations(int type) {
 
+        final TabLayout tabs = (TabLayout)getActivity().findViewById(R.id.tabs);
+        if (tabs.getVisibility() == View.GONE) {
+            tabs.setVisibility(View.VISIBLE);
+        }
+
         switch (type) {
 
             case -1:
@@ -551,6 +811,7 @@ public class RadioStationListFragment extends Fragment {
                 radioStationsList.addAll(RadioStationLab.getRadioStationsAll());
                 radioStationAdapter.setRadioStationList(radioStationsList);
                 radioStationAdapter.notifyDataSetChanged();
+                recyclerView.setAdapter(radioStationAdapter);
                 break;
             case 1:
                 //Favorite
@@ -559,6 +820,7 @@ public class RadioStationListFragment extends Fragment {
                 isRadioStationListPartial = true;
                 radioStationAdapter.setRadioStationList(radioStationsList);
                 radioStationAdapter.notifyDataSetChanged();
+                recyclerView.setAdapter(radioStationAdapter);
                 break;
             case 2:
                 //Pop
@@ -567,6 +829,7 @@ public class RadioStationListFragment extends Fragment {
                 isRadioStationListPartial = true;
                 radioStationAdapter.setRadioStationList(radioStationsList);
                 radioStationAdapter.notifyDataSetChanged();
+                recyclerView.setAdapter(radioStationAdapter);
                 break;
             case 3:
                 //Folk
@@ -575,6 +838,7 @@ public class RadioStationListFragment extends Fragment {
                 isRadioStationListPartial = true;
                 radioStationAdapter.setRadioStationList(radioStationsList);
                 radioStationAdapter.notifyDataSetChanged();
+                recyclerView.setAdapter(radioStationAdapter);
                 break;
             case 4:
                 //Location
@@ -583,7 +847,31 @@ public class RadioStationListFragment extends Fragment {
                 isRadioStationListPartial = true;
                 radioStationAdapter.setRadioStationList(radioStationsList);
                 radioStationAdapter.notifyDataSetChanged();
+                recyclerView.setAdapter(radioStationAdapter);
                 break;
+            case 5:
+                //This is list of recordings
+                recordedRadioStationList.clear();
+                String baseDir = Environment.getExternalStorageDirectory().getAbsolutePath();
+                String recDirString = baseDir + "/" + RadioStreamRecorder.RECORD_DIR;
+
+                //List files in recording directory
+                File recDir = new File(recDirString);
+                if (recDir.listFiles() != null) {
+                    recordedRadioStationList.addAll(Arrays.asList(recDir.listFiles()));
+                }
+                recordedRadioStationAdapter = new RecordedRadioStationAdapter(getActivity(), recordedRadioStationList);
+                recyclerView.setAdapter(recordedRadioStationAdapter);
+
+                //Hide tab bar
+                tabs.setVisibility(View.GONE);
+
+                 /* Stop media player if it is playing */
+                Intent stopIntent = new Intent(getActivity(), RadioPlayerService.class);
+                stopIntent.setAction(RadioPlayerFragment.ACTION_STOP);
+                getActivity().startService(stopIntent);
+                break;
+
             default:
                 //Do nothing
 
@@ -639,6 +927,7 @@ public class RadioStationListFragment extends Fragment {
         // the callback interface. If not, it throws an exception
         try {
             radioStationSelectedListener = (OnRadioStationSelectedListener) a;
+            recordingSelectedListener = (OnRecordingSelectedListener) a;
             containerActivity = (Main2Activity) a;
         } catch (ClassCastException e) {
             throw new ClassCastException(a.toString()
@@ -667,5 +956,68 @@ public class RadioStationListFragment extends Fragment {
             bound = false;
         }
     }
+
+
+    /**
+     * Contextual action toolbar
+     */
+    private ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
+
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            // Inflate a menu resource providing context menu items
+            MenuInflater inflater = mode.getMenuInflater();
+            inflater.inflate(R.menu.action_mode_menu, menu);
+            //context_menu = menu;
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            return false; // Return false if nothing is done
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+
+            if (item.getItemId() == R.id.action_delete) {
+
+                //Delete pressed recordings
+                int former_s = 0;
+                Log.d(LOG_TAG, "blb: " +  selectedRecordings);
+                for (Integer s : selectedRecordings) {
+                    if (s >  former_s) {
+                        s--;
+                    }
+                    Log.d(LOG_TAG, "Recording: " + recordedRadioStationList.get(s) + " is going to be deleted");
+                    //Delete the file from file system
+                    recordedRadioStationList.get(s).delete();
+                    recordedRadioStationList.remove(recordedRadioStationList.get(s));
+                    former_s = s;
+                }
+                actionMode.finish();
+                recordedRadioStationAdapter.notifyDataSetChanged();
+                //Notify the user
+                Snackbar snackbar = Snackbar
+                        .make(getActivity().findViewById(R.id.frame_fragment_layout),
+                                getString(R.string.recordings_deleted), Snackbar.LENGTH_SHORT);
+
+                // Changing action button text color
+                View sbView = snackbar.getView();
+                TextView textView = (TextView) sbView.findViewById(android.support.design.R.id.snackbar_text);
+                textView.setTextColor(Color.WHITE);
+                snackbar.show();
+            }
+            return false;
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            actionMode = null;
+            selectedRecordings.clear();
+            recyclerView.getAdapter().notifyDataSetChanged();
+
+        }
+    };
 
 }

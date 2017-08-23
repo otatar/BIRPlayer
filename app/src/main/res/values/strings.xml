@@ -41,6 +41,10 @@
     <string name="stopped_string">Stopirano</string>
     <string name="paused_string">Pauzirano</string>
     <string name="buffering_string">Učitavanje...</string>
+    <string name="storage_permission">Aplikacijije potrebna dozvola za pristup prostoru za pohranu da bi mogla snimati radio stanice.</string>
+    <string name="storage_permission_title">Potrebna dozvola</string>
+    <string name="error_recording">Greška prilikom snimanja!</string>
+    <string name="recordings_deleted">Odabrane sinmke su izbrisane</string>
 
     <string-array name="drawer_items">
         <item>Sve radio stanice</item>
@@ -48,6 +52,7 @@
         <item>Zabavna</item>
         <item>Narodna</item>
         <item>Sarajevo</item>
+        <item>Snimci</item>>
     </string-array>
 
     <string-array name="drawer_footer_items">

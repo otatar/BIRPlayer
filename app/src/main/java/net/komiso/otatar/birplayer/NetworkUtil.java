@@ -60,7 +60,7 @@ public class NetworkUtil {
     /**
      * Class for network change listening (BroadcastReceiver)
      */
-    class NetworkChangeReceiver extends BroadcastReceiver {
+    public  static class NetworkChangeReceiver extends BroadcastReceiver {
 
 
         @Override

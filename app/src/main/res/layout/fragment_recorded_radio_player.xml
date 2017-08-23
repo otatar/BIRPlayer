@@ -7,8 +7,7 @@
     android:gravity="center"
     android:background="@drawable/background"
     android:orientation="vertical"
-    tools:context=".RadioPlayerFragment">
-
+    tools:context=".RecordedRadioPlayerFragment">
 
     <LinearLayout
         android:id="@+id/linear1"
@@ -31,7 +30,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/radio_name"
+                android:id="@+id/recording_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
@@ -40,32 +39,19 @@
                 android:textAppearance="?android:attr/textAppearanceLarge" />
 
             <TextView
-                android:id="@+id/radio_location"
+                android:id="@+id/recording_date"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:text="@string/radio_location" />
 
             <TextView
-                android:id="@+id/radio_genre"
+                android:id="@+id/recording_info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:text="@string/radio_genre" />
 
-            <TextView
-                android:id="@+id/radio_url"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:text="@string/radio_url" />
-
-            <CheckBox
-                android:id="@+id/station_favorite"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:button="@drawable/btn_star_selector"/>
 
         </LinearLayout>
 
@@ -75,19 +61,6 @@
             android:gravity="center"
             android:orientation="vertical"
             android:layout_weight="1">
-
-            <ImageView
-                android:id="@+id/button_record"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@null"
-                android:src="@drawable/image_play_stop_record_toggle"/>
-
-            <TextView
-                android:id="@+id/recording_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="00:00:00" />
 
 
         </LinearLayout>
@@ -104,76 +77,44 @@
         android:gravity="center"
         android:orientation="vertical">
 
-
-        <TextView
-            android:id="@+id/text_status"
-            style="@style/shadowEffect"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:layout_marginTop="10dp"
-            android:text="@string/status" />
-
-        <!--<TextView-->
-            <!--android:id="@+id/song_title"-->
-            <!--style="@style/shadowEffect"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:text="@string/no_song_title" />-->
-
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
             android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/playing_time"
-                style="@style/shadowEffect"
+                android:id="@+id/current_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="00:00:00" />
+                android:layout_marginTop="5dp"
+                android:layout_marginLeft="30dp"
+                android:gravity="start"
+                style="@style/shadowEffect"
+                android:layout_weight="1"
+                android:text="00:00"/>
 
             <TextView
-                android:id="@+id/bitrate"
-                style="@style/shadowEffect"
+                android:id="@+id/end_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="20dp"
-                android:layout_marginStart="20dp"
-                android:text="0 kbps" />
+                android:layout_marginTop="5dp"
+                android:gravity="end"
+                android:layout_marginRight="30dp"
+                android:layout_weight="1"
+                style="@style/shadowEffect"
+                android:text="00:00"/>
 
         </LinearLayout>
 
-        <!--<me.itangqi.waveloadingview.WaveLoadingView
-            android:id="@+id/waveLoadingView"
-            android:layout_width="200dp"
-            android:layout_height="300dp"
-            android:layout_gravity="center_horizontal"
-            app:wlv_borderColor="@color/colorPrimary"
-            app:wlv_borderWidth="1dp"
-            app:wlv_progressValue="60"
-            app:wlv_shapeType="circle"
-            app:wlv_round_rectangle="true"
-            app:wlv_triangle_direction="north"
-            app:wlv_titleTopStrokeColor="@android:color/holo_blue_dark"
-            app:wlv_titleTopStrokeWidth="3dp"
-            app:wlv_titleTop=""
-            app:wlv_titleTopColor="@android:color/white"
-            app:wlv_titleTopSize="15sp"
-            app:wlv_titleCenterStrokeColor="@android:color/holo_blue_dark"
-            app:wlv_titleCenterStrokeWidth="3dp"
-            app:wlv_titleCenter=""
-            app:wlv_titleCenterColor="@android:color/white"
-            app:wlv_titleCenterSize="15sp"
-            app:wlv_titleBottomStrokeColor="@android:color/holo_blue_dark"
-            app:wlv_titleBottomStrokeWidth="3dp"
-            app:wlv_titleBottom=""
-            app:wlv_titleBottomColor="@android:color/white"
-            app:wlv_titleBottomSize="15sp"
-            app:wlv_waveAmplitude="0"
-            app:wlv_waveColor="@color/colorAccent"/> -->
-
+        <SeekBar
+            android:id="@+id/seek_bar"
+            android:layout_width= "match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="30dp"
+            android:layout_marginLeft="30dp"
+            android:thumb="@drawable/seekbar_thumb"
+            android:progressDrawable="@drawable/seekbar_progress"/>
 
         <LinearLayout
             android:layout_width="wrap_content"

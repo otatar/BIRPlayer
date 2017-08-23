@@ -63,6 +63,11 @@ public class RadioPlayerService extends Service {
     private RadioStation radioStation;
 
     /**
+     * File path that is being played
+     */
+    private String recFilePath;
+
+    /**
      * Reference to WiFi lock
      */
     private WifiManager.WifiLock wiFiLock;
@@ -196,13 +201,27 @@ public class RadioPlayerService extends Service {
                         startMediaPlayer();
                         break;
                     case RadioPlayerFragment.ACTION_PAUSE:
-                        pauseMediaPlayer();
+                        pauseMediaPlayer(false);
                         break;
                     case RadioPlayerFragment.ACTION_STOP:
                         stopMediaPlayer();
                         break;
+                    case RadioPlayerFragment.ACTION_REC_START:
+                        recFilePath = bundle.getString(Main2Activity.REC_FILEPATH);
+                        Log.d(LOG_TAG, "Received recording: " + recFilePath);
+                        startRecMediaPlayer(recFilePath);
+                        break;
+                    case RadioPlayerFragment.ACTION_PAUSE_REC:
+                        pauseMediaPlayer(true);
+                        break;
+
                 }
 
+            } else if (msg.what == RecordedRadioPlayerFragment.SEND_PROGRESS) {
+
+                Bundle bundle = msg.getData();
+                Log.d(LOG_TAG, "Seek bar progress: " + bundle.getInt(RecordedRadioPlayerFragment.ACTION_SEND_PROGRESS) + "s");
+                mediaPlayer.seekTo(bundle.getInt(RecordedRadioPlayerFragment.ACTION_SEND_PROGRESS) * 1000);
             }
         }
     }
@@ -242,7 +261,11 @@ public class RadioPlayerService extends Service {
 
             } else if (intent.getAction().equals(RadioPlayerFragment.ACTION_PAUSE)) {
 
-                pauseMediaPlayer();
+                pauseMediaPlayer(false);
+
+            } else if (intent.getAction().equals(RadioPlayerFragment.ACTION_PAUSE_REC)) {
+
+                pauseMediaPlayer(true);
 
             } else if (intent.getAction().equals(RadioPlayerFragment.ACTION_STOP)) {
 
@@ -254,6 +277,14 @@ public class RadioPlayerService extends Service {
                 radioStation = (RadioStation) bundle.getSerializable(Main2Activity.SELECTED_RADIO_STATION);
                 initMediaPlayer(radioStation.getListenUrl());
                 startMediaPlayer();
+
+            } else if (intent.getAction().equals(RadioPlayerFragment.ACTION_REC_START)) {
+
+                Bundle bundle = intent.getExtras();
+                recFilePath = bundle.getString(Main2Activity.REC_FILEPATH);
+                Log.d(LOG_TAG, "Received recording: " + recFilePath);
+                startRecMediaPlayer(recFilePath);
+
             }
         }
 
@@ -366,6 +397,11 @@ public class RadioPlayerService extends Service {
             @Override
             public void onPrepared(MediaPlayer mediaPlayer) {
 
+                //If we are playing file, than we don't need onPrepared callback
+                if (mediaPlayer.getDuration() != -1) {
+                    return;
+                }
+
                 Log.d(LOG_TAG, "onPrepared");
 
                 // We are ready
@@ -404,7 +440,7 @@ public class RadioPlayerService extends Service {
                 setMPState(RadioPlayerService.MP_PLAYING);
                 sendStatus();
 
-                //Retrieve meta data from server
+                //Retrieve metadata from server
                 if (radioStation.getListenType().equals("0") || radioStation.getListenType().equals("1")) {
                     refreshMetadata(radioStation.getListenUrl());
                 }
@@ -431,9 +467,22 @@ public class RadioPlayerService extends Service {
                     sendAlert(RadioPlayerFragment.SEND_BUFFERING, "stop");
 
                 } else if (what == MediaPlayer.MEDIA_INFO_METADATA_UPDATE) {
-                    Log.d(LOG_TAG, "Meta data update");
+                    Log.d(LOG_TAG, "Metadata update");
                 }
                 return false;
+            }
+        });
+
+
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+
+                Log.d(LOG_TAG, "onCompletion");
+
+                setMPState(MP_NOT_READY);
+
+                sendAlert(RadioPlayerFragment.SEND_COMPLETION, "");
             }
         });
 
@@ -466,8 +515,8 @@ public class RadioPlayerService extends Service {
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         Log.d(LOG_TAG, "Setting data source: " + mediaURL);
         try {
-            //mediaPlayer.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL);
-            mediaPlayer.setDataSource(mediaURL);
+            mediaPlayer.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL);
+            //mediaPlayer.setDataSource(mediaURL);
         } catch (Exception e) {
             Log.d(LOG_TAG, radioStation.getListenUrl() + e.toString());
             setMPState(RadioPlayerService.MP_ERROR);
@@ -515,10 +564,52 @@ public class RadioPlayerService extends Service {
 
     }
 
+
+    /**
+     * Start playing recorded file
+     */
+    protected void startRecMediaPlayer(String recFilePath) {
+
+        Log.i(LOG_TAG, "startRecMediaPlayer");
+
+        // If media player is pause or playing, just play
+        if (mpState.equals(RadioPlayerService.MP_PAUSED)) {
+            // Play!!!
+            mediaPlayer.start();
+            setMPState(RadioPlayerService.MP_PLAYING);
+            sendStatus();
+
+        } else if (mpState.equals(RadioPlayerService.MP_PLAYING)) {
+
+            //Well, do nothing
+
+        } else {
+
+            mediaPlayer.reset();
+            //Prepare
+            mediaPlayer.setAudioStreamType(AudioManager.MODE_NORMAL);
+            Log.d(LOG_TAG, "Setting data source: " + recFilePath);
+            try {
+                mediaPlayer.setDataSource(recFilePath);
+                mediaPlayer.prepare();
+            } catch (Exception e) {
+                Log.d(LOG_TAG, e.toString());
+                setMPState(RadioPlayerService.MP_ERROR);
+                sendStatus();
+            }
+
+            mediaPlayer.start();
+            setMPState(RadioPlayerService.MP_PLAYING);
+            sendStatus();
+        }
+
+    }
+
+
     /**
      * Pause media player
      */
-    protected void pauseMediaPlayer() {
+    protected void pauseMediaPlayer(Boolean isRecPlaying) {
 
         Log.i(LOG_TAG, "pauseMediaPlayer");
 
@@ -526,12 +617,14 @@ public class RadioPlayerService extends Service {
             mediaPlayer.pause();
             setMPState(RadioPlayerService.MP_PAUSED);
             sendStatus();
-            radioStation.setPlaying(false);
-            playingTimeRunning = false;
+            if (!isRecPlaying) {
+                radioStation.setPlaying(false);
+                playingTimeRunning = false;
 
-            //Stop retrieving meta data from server
-            if (radioStation.getListenType().equals("0") || radioStation.getListenType().equals("1")) {
-                retrieveTimer.cancel();
+                //Stop retrieving meta data from server
+                if (radioStation.getListenType().equals("0") || radioStation.getListenType().equals("1")) {
+                    retrieveTimer.cancel();
+                }
             }
         }
 
@@ -747,8 +840,8 @@ public class RadioPlayerService extends Service {
         HashMap<String, String> metadata = new HashMap<>();
 
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-        mediaMetadataRetriever.setDataSource(radioStation.getListenUrl(), metadata);
-        //mediaMetadataRetriever.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL, metadata);
+        //mediaMetadataRetriever.setDataSource(radioStation.getListenUrl(), metadata);
+        mediaMetadataRetriever.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL, metadata);
 
 
         bitRate = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);

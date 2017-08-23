@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -26,17 +27,23 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import net.komiso.otatar.biplayer.R;
 
+import org.w3c.dom.Text;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 
 /**
  * A simple {@link Fragment} subclass.
  */
-public class RadioPlayerFragment extends Fragment {
+public class RecordedRadioPlayerFragment extends Fragment {
 
     /**
      * Constants to use with Messenger and Intents
@@ -50,6 +57,8 @@ public class RadioPlayerFragment extends Fragment {
     public static final String ACTION_STOP = "stop";
     public static final String ACTION_PAUSE = "pause";
     public static final String ACTION_PAUSE_REC = "pause_rec";
+    public static final String ACTION_SEND_PROGRESS = "action_send_progress";
+    public static final int SEND_PROGRESS = 10;
     public static final int SEND_COMPLETION = 9;
     public static final int SEND_TIME = 8;
     public static final int SEND_BITRATE = 7;
@@ -63,18 +72,14 @@ public class RadioPlayerFragment extends Fragment {
     public static final String STATUS = "status";
     public static final String START_FOREGROUND = "startForeground";
 
-    public static final String LOG_TAG = "RadioPlayerFragmentLog";
-    public static final String RADIO_STATION_OBJECT = "radio_station_object";
-    public static final String RADIO_STATION_OBJECT_LIST = "radio_station_object_list";
+    public static final String LOG_TAG = "RecRadioPlayerFragment";
+    public static final String RECORDED_RADIO_STATION_OBJECT = "recorded_radio_station_object";
+    private static final String RECORDED_RADIO_STATION_OBJECT_LIST = "recorded_radio_station_object_list";
 
-    public static final String RADIO_LOCAL_URL = "http://10.0.2.2:8080";
-
-    /* Radio Station object */
-    private RadioStation radioStation;
 
     /* Radio Station List and position of radio station*/
-    private static ArrayList<RadioStation> radioStationList = new ArrayList<>();
-    private static int radioStationPosition;
+    private static ArrayList<File> recordedRadioStationList = new ArrayList<>();
+    private static int recordedRadioStationPosition;
 
     /* If we are bound to service */
     private Boolean bound = false;
@@ -88,23 +93,25 @@ public class RadioPlayerFragment extends Fragment {
     //Reference to service messenger
     private Messenger toServiceMessenger;
 
-    //Reference to recording service messenger
-    private Messenger recordingServiceMessenger;
-
-    //Reference to local recording service messenger
-    private Messenger localRecordingServiceMessenger;
-
     /* Reference to radio station name TextView */
-    private TextView radioStationName;
+    private TextView recordingName;
 
     /* Reference to radio station location */
-    private TextView radioStationLocation;
+    private TextView recordingDate;
 
     /* Reference to radio station genre */
-    private TextView radioStationGenre;
+    private TextView recordingInfo;
 
-    /* Reference to radio station url */
-    private TextView radioStationUrl;
+    /* Reference to current Time */
+    private TextView currentTime;
+
+    /* Reference to end time */
+    private TextView endTime;
+
+    /* Reference to seektime */
+    private SeekBar seekBar;
+
+    private String recordedRadioStation;
 
     /* Reference to play/pause button */
     private ImageView btnPlay;
@@ -115,31 +122,16 @@ public class RadioPlayerFragment extends Fragment {
     /* Reference to backward button */
     private ImageButton btnBackward;
 
-    /* Reference to record button */
-    private ImageView btnRecord;
-
-    /* Reference to status TextView */
-    private TextView statusTextView;
-
-    /* Reference to current playing time */
-    private TextView playTime;
-
-    /* Reference to current bit rate */
-    private TextView bitRate;
-
-    /* Reference to favorite check box */
-    private CheckBox favoriteCheckBox;
-
     /* Is paying time running */
     private boolean playingTimeRunning;
 
     /* Num of sec since playing */
     private int playingSecs;
 
-    private int playingBitrate = 0;
-
     /* Container Activity */
     private Main2Activity containerActivity;
+
+    private static int seekBarProgress;
 
     /* Radio Station selected listener */
     private OnRadioStationChangedListener radioStationChangedListener;
@@ -152,28 +144,28 @@ public class RadioPlayerFragment extends Fragment {
     }
 
 
-    public RadioPlayerFragment() {
+    public RecordedRadioPlayerFragment() {
         // Required empty public constructor
     }
 
 
     /**
-     * Method to instantiate and initialize new RadioPlayerFragment object
+     * Method to instantiate and initialize new RecordedRadioPlayerFragment object
      *
      * @param position         Position of the radio station to be played in the list
-     * @param radioStationList List of radio stations
-     * @return new RadioPlayerFragment object
+     * @param recordedRadioStationList List of radio stations
+     * @return new RecordedRadioPlayerFragment object
      */
-    public static RadioPlayerFragment newInstance(int position, ArrayList<RadioStation> radioStationList) {
+    public static RecordedRadioPlayerFragment newInstance(int position, ArrayList<File> recordedRadioStationList) {
 
         Bundle bundle = new Bundle();
-        bundle.putInt(RADIO_STATION_OBJECT, position);
-        bundle.putSerializable(RADIO_STATION_OBJECT_LIST, radioStationList);
+        bundle.putInt(RECORDED_RADIO_STATION_OBJECT, position);
+        bundle.putSerializable(RECORDED_RADIO_STATION_OBJECT_LIST, recordedRadioStationList);
 
-        RadioPlayerFragment radioPlayerFragment = new RadioPlayerFragment();
-        radioPlayerFragment.setArguments(bundle);
+        RecordedRadioPlayerFragment recordedRadioPlayerFragment = new RecordedRadioPlayerFragment();
+        recordedRadioPlayerFragment.setArguments(bundle);
 
-        return radioPlayerFragment;
+        return recordedRadioPlayerFragment;
     }
 
 
@@ -185,21 +177,15 @@ public class RadioPlayerFragment extends Fragment {
         @Override
         public void handleMessage(Message msg) {
 
-            Log.d(LOG_TAG, "RadioPlayerFragment:handleMessage()");
+            Log.d(LOG_TAG, "RecordedRadioPlayerFragment:handleMessage()");
 
             if (msg.what == UPDATE_STATUS) {
                 Bundle bundle = msg.getData();
-                setStatus(bundle.getString(STATUS));
 
                 if (bundle.getString(STATUS).equals(RadioPlayerService.MP_PLAYING)) {
                     playingTimeRunning = true;
                     if (!btnPlay.isActivated()) {
                         btnPlay.setActivated(true);
-                    }
-
-                    //Activate the recording button
-                    if (Main2Activity.storagePerm) {
-                        btnRecord.setEnabled(true);
                     }
 
                 } else if (bundle.getString(STATUS).equals(RadioPlayerService.MP_PAUSED)) {
@@ -209,33 +195,26 @@ public class RadioPlayerFragment extends Fragment {
 
                     playingTimeRunning = false;
                     playingSecs = 0;
-                    playingBitrate = 0;
-
-                    //Toggle button state
-                    if (btnRecord.isActivated()) {
-                        btnRecord.setActivated(false);
-                    }
-                    btnRecord.setEnabled(false);
-                    stopRecording();
-
 
                 } else {
 
                     playingTimeRunning = false;
                     playingSecs = 0;
-                    playingBitrate = 0;
-
                 }
+
+            } else if (msg.what == SEND_COMPLETION) {
+
+                //End playing recording
+                playingTimeRunning = false;
+                playingSecs = 0;
+
+                //Toggle state
+                btnPlay.setActivated(!btnPlay.isActivated());
 
             } else if (msg.what == SEND_ERROR || msg.what == SEND_ALERT) {
                 //Inform user about that
                 Bundle bundle = msg.getData();
                 showSnackBar(bundle.getString(EXTRA_PARAM));
-
-                //Toggle button state
-                btnRecord.setActivated(!btnRecord.isActivated());
-                btnRecord.setEnabled(false);
-                stopRecording();
 
             } else if (msg.what == SEND_BUFFERING) {
                 if (msg.getData().getString(EXTRA_PARAM).equals("start")) {
@@ -248,9 +227,6 @@ public class RadioPlayerFragment extends Fragment {
                 if (RadioPlayerService.mediaPlayer.isPlaying()) {
                     setStatus(msg.getData().getString(EXTRA_PARAM));
                 }
-
-            } else if (msg.what == SEND_BITRATE) {
-                playingBitrate = Integer.valueOf(msg.getData().getString(EXTRA_PARAM));
 
             } else if (msg.what == SEND_TIME) {
                 Log.d(LOG_TAG, "Received time: " + msg.getData().getString(EXTRA_PARAM));
@@ -267,12 +243,10 @@ public class RadioPlayerFragment extends Fragment {
 
             } else if (msg.what == InternetRadioRecorderService.SEND_ERR) {
                 Log.d(LOG_TAG, "Receive SEND_ERR msg");
+                playingTimeRunning = false;
                 Bundle bundle = msg.getData();
                 Log.d(LOG_TAG, "Error while recording: " + bundle.getString(InternetRadioRecorderService.BUNDLE_MSG));
                 showSnackBar(containerActivity.getString(R.string.error_recording));
-
-                //Toggle button state
-                btnRecord.setActivated(!btnRecord.isActivated());
 
             }
         }
@@ -286,18 +260,17 @@ public class RadioPlayerFragment extends Fragment {
             toServiceMessenger = new Messenger(service);
             fromServiceMessenger = new Messenger(new IncomingHandler());
             bound = true;
-            Log.d(LOG_TAG, "Connected to service: " + radioStation.getRadioStationName());
+            Log.d(LOG_TAG, "Connected to service");
 
             //Register to service for messages
             try {
                 Message msg = Message.obtain(null,
-                        REGISTER);
+                        RadioPlayerFragment.REGISTER);
                 msg.replyTo = fromServiceMessenger;
                 toServiceMessenger.send(msg);
 
             } catch (RemoteException e) {
             }
-
         }
 
         @Override
@@ -308,52 +281,19 @@ public class RadioPlayerFragment extends Fragment {
     };
 
 
-    private ServiceConnection recordingServiceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-
-            recordingServiceMessenger = new Messenger(service);
-            localRecordingServiceMessenger = new Messenger(new IncomingHandler());
-            boundRecording = true;
-            Log.d(LOG_TAG, "Connected to recording service");
-
-            //Register to service for messages
-            try {
-                Message msg = Message.obtain(null, InternetRadioRecorderService.REGISTER);
-                msg.replyTo = localRecordingServiceMessenger;
-                recordingServiceMessenger.send(msg);
-
-            } catch (RemoteException e) {
-            }
-
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            Log.d(LOG_TAG, "Disconnected from recording service");
-            boundRecording = false;
-
-        }
-    };
-
-
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         /* Get RadioStation object from fragments arguments */
-        radioStationPosition = getArguments().getInt(RADIO_STATION_OBJECT);
-        radioStationList.clear();
-        radioStationList.addAll((ArrayList<RadioStation>) getArguments().getSerializable(RADIO_STATION_OBJECT_LIST));
+        recordedRadioStationPosition = getArguments().getInt(RECORDED_RADIO_STATION_OBJECT);
+        recordedRadioStationList.clear();
+        recordedRadioStationList.addAll((ArrayList<File>) getArguments().getSerializable(RECORDED_RADIO_STATION_OBJECT_LIST));
 
-        radioStation = radioStationList.get(radioStationPosition);
-
-        //Select the station
-        deselectAllRadioStations(radioStationList);
-        Log.d(LOG_TAG, "Radio Station list size: " + radioStationList.size());
-        radioStation.setSelected(true);
+        recordedRadioStation = recordedRadioStationList.get(recordedRadioStationPosition).getAbsolutePath();
 
     }
+
 
     @Override
     public void onResume() {
@@ -370,7 +310,7 @@ public class RadioPlayerFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         // Inflate the layout for this fragment
-        View v = inflater.inflate(R.layout.fragment_radio_player, container, false);
+        View v = inflater.inflate(R.layout.fragment_recorded_radio_player, container, false);
 
         // Retain this fragment across configuration changes.
         setRetainInstance(true);
@@ -380,27 +320,19 @@ public class RadioPlayerFragment extends Fragment {
                 "digital-7.ttf");
 
         /* Lets connect the parts */
-        radioStationName = (TextView) v.findViewById(R.id.radio_name);
-        radioStationLocation = (TextView) v.findViewById(R.id.radio_location);
-        radioStationGenre = (TextView) v.findViewById(R.id.radio_genre);
-        radioStationUrl = (TextView) v.findViewById(R.id.radio_url);
-        statusTextView = (TextView) v.findViewById(R.id.text_status);
-        favoriteCheckBox = (CheckBox) v.findViewById(R.id.station_favorite);
-        playTime = (TextView) v.findViewById(R.id.playing_time);
-        playTime.setTypeface(myTypeface);
-        bitRate = (TextView) v.findViewById(R.id.bitrate);
-        bitRate.setTypeface(myTypeface);
-
+        recordingName = (TextView) v.findViewById(R.id.recording_name);
+        recordingDate = (TextView) v.findViewById(R.id.recording_date);
+        recordingInfo = (TextView) v.findViewById(R.id.recording_info);
+        currentTime = (TextView) v.findViewById(R.id.current_time);
+        currentTime.setTypeface(myTypeface);
+        endTime = (TextView) v.findViewById(R.id.end_time);
+        endTime.setTypeface(myTypeface);
+        seekBar = (SeekBar) v.findViewById(R.id.seek_bar);
         btnPlay = (ImageView) v.findViewById(R.id.button_play);
         btnForward = (ImageButton) v.findViewById(R.id.button_forward);
         btnBackward = (ImageButton) v.findViewById(R.id.button_backward);
-        btnRecord = (ImageView) v.findViewById(R.id.button_record);
 
-        //Disable the record button if we didn't get the storage permission and we are not playing
-        btnRecord.setEnabled(false);
-
-        //Run the playing timer handler
-        runTimer();
+        runSeekBarTimer();
 
         //Listener for play/pause button
         btnPlay.setOnClickListener(new View.OnClickListener() {
@@ -410,10 +342,9 @@ public class RadioPlayerFragment extends Fragment {
                 Log.d(LOG_TAG, "isActivated: " + String.valueOf(btnPlay.isActivated()));
 
                 if (!btnPlay.isActivated()) {
-                    sendAction(ACTION_INIT);
-                    sendAction(ACTION_START);
+                    sendAction(ACTION_REC_START);
                 } else {
-                    sendAction(ACTION_STOP);
+                    sendAction(ACTION_PAUSE_REC);
                 }
 
                 //Toggle state
@@ -427,22 +358,16 @@ public class RadioPlayerFragment extends Fragment {
             public void onClick(View v) {
 
                 //Send stop RadioPlayerService
-                sendAction(ACTION_STOP);
+                sendAction(ACTION_PAUSE_REC);
 
                 //Change load next radio station
-                changeRadioStation(0);
+                changeRecordedRadioStation(0);
 
                 //If play/pause toggle button is active, deactivate it
                 if (btnPlay.isActivated()) {
                     btnPlay.setActivated(false);
                 }
 
-                //Stop recording
-                if (btnRecord.isActivated()) {
-                    btnRecord.setActivated(false);
-                }
-                btnRecord.setEnabled(false);
-                stopRecording();
             }
         });
 
@@ -455,98 +380,49 @@ public class RadioPlayerFragment extends Fragment {
                 sendAction(ACTION_STOP);
 
                 //Change load next radio station
-                changeRadioStation(1);
+                changeRecordedRadioStation(1);
 
                 //If play/pause toggle button is activated, deactivate it
                 if (btnPlay.isActivated()) {
                     btnPlay.setActivated(false);
                 }
 
-                //Stop recording
-                if (btnRecord.isActivated()) {
-                    btnRecord.setActivated(false);
-                }
-                btnRecord.setEnabled(false);
-                stopRecording();
             }
         });
 
-
-        //Listener for record button
-        btnRecord.setOnClickListener(new View.OnClickListener() {
+        //Listener for seekbar
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onClick(View v) {
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 
-                Log.d(LOG_TAG, "Clicked on record button");
+                if (fromUser) {
 
-                if (!btnRecord.isActivated()) {
-                    startRecording();
-                } else {
-                    stopRecording();
+                    RecordedRadioPlayerFragment.seekBarProgress = progress;
+                    sendAction(RecordedRadioPlayerFragment.ACTION_SEND_PROGRESS);
+
+                    if (playingTimeRunning) {
+                        playingSecs = progress;
+                    }
                 }
+            }
 
-                //Toggle button state
-                btnRecord.setActivated(!btnRecord.isActivated());
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
 
             }
-        });
 
-        //Listener for check box
-        favoriteCheckBox.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-
-                if (favoriteCheckBox.isChecked()) {
-                    // Set favorite
-                    radioStation.setFavorite(true);
-                    // Update database
-                    RadioStationLab.updateFavoriteRadioStation(radioStation, true);
-                } else {
-                    radioStation.setFavorite(false);
-                    // Update database
-                    RadioStationLab.updateFavoriteRadioStation(radioStation, false);
-                }
+            public void onStopTrackingTouch(SeekBar seekBar) {
 
             }
         });
 
         //Display radio station info
-        updateRadioStationDisplay();
+        updateRecordedRadioStationDisplay();
 
         return v;
     }
 
-    private void startRecording() {
-        Log.d(LOG_TAG, "Start recording!!!");
-
-        //Start recording service
-        Intent intent = new Intent(getActivity(), InternetRadioRecorderService.class);
-        intent.setAction(InternetRadioRecorderService.START_RECORDING);
-        Bundle bundle = new Bundle();
-        bundle.putSerializable(InternetRadioRecorderService.BUNDLE_RADIO_STATION, radioStation);
-        intent.putExtra(InternetRadioRecorderService.BUNDLE_RADIO_STATION, bundle);
-        getActivity().startService(intent);
-
-        //Bind to service
-        getActivity().bindService(intent, recordingServiceConnection, Context.BIND_NOT_FOREGROUND);
-    }
-
-    private void stopRecording() {
-        Log.d(LOG_TAG, "Stop recording!!!");
-
-        //Stop Recording Service
-        Intent intent = new Intent(getActivity(), InternetRadioRecorderService.class);
-        intent.setAction(InternetRadioRecorderService.STOP_RECORDING);
-        Bundle bundle = new Bundle();
-        bundle.putSerializable(InternetRadioRecorderService.BUNDLE_RADIO_STATION, radioStation);
-        intent.putExtra(InternetRadioRecorderService.BUNDLE_RADIO_STATION, bundle);
-        getActivity().startService(intent);
-
-        if (boundRecording) {
-            getActivity().unbindService(recordingServiceConnection);
-            boundRecording = false;
-        }
-    }
 
     @Override
     public void setUserVisibleHint(boolean isVisibleToUser) {
@@ -577,6 +453,16 @@ public class RadioPlayerFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(LOG_TAG, "onDestroy");
+
+        if (bound) {
+            getActivity().unbindService(serviceConnection);
+            bound = false;
+        }
+    }
 
     @Override
     public void onAttach(Context context) {
@@ -588,15 +474,6 @@ public class RadioPlayerFragment extends Fragment {
             a = (Activity) context;
         }
 
-        // This makes sure that the container activity has implemented
-        // the callback interface. If not, it throws an exception
-        try {
-            radioStationChangedListener = (OnRadioStationChangedListener) a;
-            containerActivity = (Main2Activity) a;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(a.toString()
-                    + " must implement OnHeadlineSelectedListener");
-        }
     }
 
 
@@ -638,7 +515,6 @@ public class RadioPlayerFragment extends Fragment {
                 status = statusText;
         }
 
-        statusTextView.setText(RadioPlayerFragment.capitalizeString(status));
     }
 
     /**
@@ -665,17 +541,30 @@ public class RadioPlayerFragment extends Fragment {
 
         Log.d(LOG_TAG, "sendAction");
 
-        if (action.equals(RadioPlayerFragment.ACTION_INIT)) {
+        if (action.equals(RadioPlayerFragment.ACTION_REC_START)) {
             try {
                 Message msg = Message.obtain(null, RadioPlayerFragment.SEND_ACTION);
                 Bundle bundle = new Bundle();
                 bundle.putString(RadioPlayerFragment.ACTION, action);
-                bundle.putSerializable(RadioPlayerFragment.RADIO_STATION_OBJECT, radioStation);
+                bundle.putSerializable(Main2Activity.REC_FILEPATH, recordedRadioStation);
                 msg.setData(bundle);
                 toServiceMessenger.send(msg);
             } catch (RemoteException e) {
                 Log.e(LOG_TAG, "Cannot send action: " + action);
             }
+
+        }else if (action.equals(RecordedRadioPlayerFragment.ACTION_SEND_PROGRESS)) {
+            try {
+                Message msg = Message.obtain(null, RecordedRadioPlayerFragment.SEND_PROGRESS);
+                Bundle bundle = new Bundle();
+                bundle.putString(RadioPlayerFragment.ACTION, action);
+                bundle.putInt(RecordedRadioPlayerFragment.ACTION_SEND_PROGRESS, seekBarProgress);
+                msg.setData(bundle);
+                toServiceMessenger.send(msg);
+            } catch (RemoteException e) {
+                Log.e(LOG_TAG, "Cannot send action: " + action);
+            }
+
 
         } else {
 
@@ -692,137 +581,96 @@ public class RadioPlayerFragment extends Fragment {
         }
     }
 
-    /**
-     * Timer for displaying playing time
-     */
-    private void runTimer() {
-
-        // Handler
-        final Handler handler = new Handler();
-
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                int hour = playingSecs / 3600;
-                int min = (playingSecs % 3600) / 60;
-                int res_sec = playingSecs % 60;
-
-                String time = String.format("%02d:%02d:%02d", hour, min, res_sec);
-                if (playingBitrate != 0) {
-                    playTime.setText(time);
-                    bitRate.setText(playingBitrate / 1000 + " kb/s");
-                } else {
-                    playTime.setText(time);
-                    bitRate.setText("0 kb/s");
-                }
-
-
-                if (playingTimeRunning) {
-                    playingSecs++;
-                }
-
-                handler.postDelayed(this, 1000);
-            }
-        });
-
-    }
-
 
     /**
      * Function to change radio station in given direction
      *
      * @param direction 0 forward, 1 backward
      */
-    private void changeRadioStation(int direction) {
+    private void changeRecordedRadioStation(int direction) {
 
-        Log.d(LOG_TAG, "changeRadioStation");
+        Log.d(LOG_TAG, "changeRecordedRadioStation");
 
-        //Deselect previous station
-        radioStation.setSelected(false);
 
         if (direction == 0) {
             //Forward
-            if (radioStationPosition == radioStationList.size() - 1) {
-                radioStationPosition = 0;
-                radioStation = radioStationList.get(radioStationPosition);
+            if (recordedRadioStationPosition == recordedRadioStationList.size() - 1) {
+                recordedRadioStationPosition = 0;
+                recordedRadioStation = recordedRadioStationList.get(recordedRadioStationPosition).getAbsolutePath();
             } else {
-                radioStationPosition++;
-                radioStation = radioStationList.get(radioStationPosition);
+                recordedRadioStationPosition++;
+                recordedRadioStation = recordedRadioStationList.get(recordedRadioStationPosition).getAbsolutePath();
             }
 
         } else if (direction == 1) {
             //Backward
-            if (radioStationPosition == 0) {
-                radioStationPosition = radioStationList.size() - 1;
-                radioStation = radioStationList.get(radioStationPosition);
+            if (recordedRadioStationPosition == 0) {
+                recordedRadioStationPosition = recordedRadioStationList.size() - 1;
+                recordedRadioStation = recordedRadioStationList.get(recordedRadioStationPosition).getAbsolutePath();
             } else {
-                radioStationPosition--;
-                radioStation = radioStationList.get(radioStationPosition);
+                recordedRadioStationPosition--;
+                recordedRadioStation = recordedRadioStationList.get(recordedRadioStationPosition).getAbsolutePath();
             }
         }
 
-        //Select new station
-        radioStation.setSelected(true);
-
-        //Notice about that
-        containerActivity.onRadioStationChanged(radioStationPosition);
 
         //Update radio station display
-        updateRadioStationDisplay();
+        updateRecordedRadioStationDisplay();
 
     }
 
     /**
      * Updates radio station display views
      */
-    private void updateRadioStationDisplay() {
+    private void updateRecordedRadioStationDisplay() {
 
-        Log.d(LOG_TAG, "updateRadioStationDisplay");
+        Log.d(LOG_TAG, "updateRecordedRadioStationDisplay");
 
         // Set radio station name
-        radioStationName.setText(radioStation.getRadioStationName());
-        Shader shader = new LinearGradient(0, 0, 0, radioStationName.getTextSize(), R.color.yellow, Color.BLUE,
+        recordingName.setText(recordedRadioStation.substring(recordedRadioStation.lastIndexOf("/") + 1));
+        Shader shader = new LinearGradient(0, 0, 0, recordingName.getTextSize(), R.color.yellow, Color.BLUE,
                 Shader.TileMode.CLAMP);
-        radioStationName.getPaint().setShader(shader);
+        recordingName.getPaint().setShader(shader);
 
-        // Set radio station location
-        radioStationLocation.setText(radioStation.getRadioStationLocation());
-        shader = new LinearGradient(0, 0, 0, radioStationLocation.getTextSize(), R.color.yellow, Color.BLUE,
+        // Set radio station date
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        File file = new File(recordedRadioStation);
+
+        recordingDate.setText(sdf.format(file.lastModified()));
+        shader = new LinearGradient(0, 0, 0, recordingDate.getTextSize(), R.color.yellow, Color.BLUE,
                 Shader.TileMode.CLAMP);
-        radioStationLocation.getPaint().setShader(shader);
+        recordingDate.getPaint().setShader(shader);
 
-        // Set radio station url
-        shader = new LinearGradient(0, 0, 0, radioStationUrl.getTextSize(), R.color.yellow, Color.BLUE,
+        // Set radio station info
+        //Lets compute the duration of mp3
+        MediaMetadataRetriever metaRetriever = new MediaMetadataRetriever();
+        metaRetriever.setDataSource(recordedRadioStation);
+        String duration = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+        String bitrate = metaRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+        long dur = Long.parseLong(duration) / 1000;
+        long hour = dur / 3600;
+        long min = (dur % 3600) / 60;
+        long res_sec = dur % 60;
+        String time = String.format("%02d:%02d:%02d", hour, min, res_sec);
+
+        recordingInfo.setText(bitrate + " bps, " + (recordedRadioStation.substring(recordedRadioStation.length() - 3)));
+        shader = new LinearGradient(0, 0, 0, recordingInfo.getTextSize(), R.color.yellow, Color.BLUE,
                 Shader.TileMode.CLAMP);
-        radioStationUrl.setText(radioStation.getRadioStationUrl());
-        radioStationUrl.getPaint().setShader(shader);
+        recordingInfo.getPaint().setShader(shader);
 
-        //Set radio station genre
-        shader = new LinearGradient(0, 0, 0, radioStationUrl.getTextSize(), R.color.yellow, Color.BLUE,
-                Shader.TileMode.CLAMP);
-        radioStationGenre.setText(radioStation.getRadioStationGenre());
-        radioStationGenre.getPaint().setShader(shader);
+        //Set current time
+        currentTime.setText("00:00:00");
 
-        //Set favorite check box
-        favoriteCheckBox.setChecked(radioStation.getFavorite());
+        //Set end time
+        endTime.setText(time);
+        Log.d(LOG_TAG, "time: " + endTime.getText());
+
+        //Set seekbar
+        seekBar.setMax((int)dur);
+        seekBar.setProgress(0);
+
     }
 
-    /**
-     * Deselects all radio stations
-     *
-     * @param list List of radio stations
-     */
-    public static void deselectAllRadioStations(ArrayList<RadioStation> list) {
-
-        Log.d(LOG_TAG, "deselectAllRadioStations");
-
-        for (RadioStation station : list) {
-            if (station.getSelected()) {
-                station.setSelected(false);
-                // station.setPlaying(false);
-            }
-        }
-    }
 
     /**
      * Stops all radio stations
@@ -849,7 +697,6 @@ public class RadioPlayerFragment extends Fragment {
      * @param string String to capitalize
      * @return Capitalized string
      */
-    @Nullable
     public static String capitalizeString(String string) {
 
         Log.d(LOG_TAG, "capitalizeString");
@@ -874,10 +721,42 @@ public class RadioPlayerFragment extends Fragment {
                     retString += " ";
                 }
             }
-
         }
 
         return retString;
+    }
+
+
+    /**
+     * Timer for seekbar updating
+     */
+    private void runSeekBarTimer() {
+
+        // Handler
+        final Handler handler = new Handler();
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                int hour = playingSecs / 3600;
+                int min = (playingSecs % 3600) / 60;
+                int res_sec = playingSecs % 60;
+
+                String time = String.format("%02d:%02d:%02d", hour, min, res_sec);
+                currentTime.setText(time);
+
+                //Update seekbar
+                seekBar.setProgress(0);
+                seekBar.setProgress(playingSecs);
+
+                if (playingTimeRunning) {
+                    playingSecs++;
+                }
+
+                handler.postDelayed(this, 1000);
+            }
+        });
+
     }
 
 

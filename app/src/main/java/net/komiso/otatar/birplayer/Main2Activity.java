@@ -1,13 +1,19 @@
 package net.komiso.otatar.birplayer;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.os.Build;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
@@ -26,17 +32,26 @@ import android.widget.ListView;
 
 import net.komiso.otatar.biplayer.R;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class Main2Activity extends AppCompatActivity implements RadioStationListFragment.OnRadioStationSelectedListener,
                                                                 RadioPlayerFragment.OnRadioStationChangedListener,
-                                                                RadioStationListFragment.OnRadioStationSelectedAndPlayListener {
+                                                                RadioStationListFragment.OnRadioStationSelectedAndPlayListener,
+                                                                RadioStationListFragment.OnRecordingPlayListener,
+                                                                RadioStationListFragment.OnRecordingSelectedListener {
 
     //Log TAG
     private static final String LOG_TAG = "Main2Activity";
 
     //Bundle keys
     public static String SELECTED_RADIO_STATION = "selected_position";
+    public static String REC_FILEPATH = "rec_filepath";
+
+    private static final int REQUEST_WRITE_STORAGE = 112;
+
+    //Whether we have permission granted for write storage
+    public static boolean storagePerm = false;
 
     // Whether there is a internet connection.
     public static int internetConnection;
@@ -160,9 +175,93 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
 
     @Override
+    public void onRecordingPlay(String recFilePath, Boolean stopRadioStation) {
+
+        Log.d(LOG_TAG, "onRecordingPlay");
+
+        if (!stopRadioStation) {
+
+            //First, stop previous radio station
+           /* Intent stopIntent = new Intent(this, RadioPlayerService.class);
+            stopIntent.setAction(RadioPlayerFragment.ACTION_STOP);
+            startService(stopIntent);*/
+
+            //Play
+            Intent playIntent = new Intent(this, RadioPlayerService.class);
+            playIntent.setAction(RadioPlayerFragment.ACTION_REC_START);
+            playIntent.putExtra(REC_FILEPATH, recFilePath);
+            startService(playIntent);
+
+        } else {
+
+            //Stop
+            Intent stopIntent = new Intent(this, RadioPlayerService.class);
+            stopIntent.setAction(RadioPlayerFragment.ACTION_PAUSE_REC);
+            startService(stopIntent);
+
+        }
+
+    }
+
+
+    @Override
+    public void onRecordingSelected(int position, ArrayList<File> recordedRadioStationList) {
+
+        //Start recorded radio player activity
+        Intent intent = new Intent(this, RecordedRadioPlayerActivity.class);
+        intent.putExtra(RecordedRadioPlayerActivity.EXTRA_POSITION, position);
+        intent.putExtra(RecordedRadioPlayerActivity.EXTRA_REC_LIST, recordedRadioStationList);
+
+        startActivity(intent);
+
+
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
+
+        //We are on API > 22 we need permission for data storage
+        int MyVersion = Build.VERSION.SDK_INT;
+        if (MyVersion > Build.VERSION_CODES.LOLLIPOP_MR1) {
+
+            //We need to ask for permission*******************************
+            int permission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+            if (permission != PackageManager.PERMISSION_GRANTED) {
+                Log.i(LOG_TAG, "Permission to record denied");
+
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setMessage(this.getString(R.string.storage_permission))
+                            .setTitle(this.getString(R.string.storage_permission_title));
+
+                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+
+                        public void onClick(DialogInterface dialog, int id) {
+                            Log.i(LOG_TAG, "Clicked");
+                            makeRequest();
+                        }
+                    });
+
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
+
+                } else {
+                    makeRequest();
+                }
+
+            } else {
+
+                //We already have the permission
+                storagePerm = true;
+            }
+
+
+        }
+
 
         // Start service, if it has't been started
         startService(RadioPlayerService.newStartIntent(this));
@@ -193,7 +292,8 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
                 R.drawable.list_favorite_icon,
                 R.drawable.list_pop_icon,
                 R.drawable.list_folk_icon,
-                R.drawable.list_sarajevo_icon
+                R.drawable.list_sarajevo_icon,
+                R.drawable.list_recorded_icon
         };
         drawerList.setAdapter(new CustomDrawerListAdapter(this, getResources().getStringArray(R.array.drawer_items),
                 arrayIcons));
@@ -321,6 +421,7 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
             Log.d(LOG_TAG, "Intent Position: " + selectedRadioStationPosition);
             changeTab();
 
+
         } else if (intent.getAction().equals(Intent.ACTION_MAIN) && savedInstanceState != null) {
 
             //Restarted due to change in configuration (screen rotation)
@@ -408,6 +509,7 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
                 return true;
             }
 
+
             @Override
             public boolean onQueryTextChange(String newText) {
                 Log.d(LOG_TAG, "onQueryTextChange: " + newText);
@@ -454,6 +556,51 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         Log.d(LOG_TAG, "onSaveInstanceState()");
 
     }
+
+
+    /**
+     * Function to make permission request for DATA STORAGE
+     */
+    protected void makeRequest() {
+
+        Log.d(LOG_TAG, "makeRequest()");
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_STORAGE);
+    }
+
+
+    /**
+     * Function to take care of permission  request response
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
+     */
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_WRITE_STORAGE: {
+
+                if (grantResults.length == 0
+                        || grantResults[0] !=
+                        PackageManager.PERMISSION_GRANTED) {
+
+                    Log.d(LOG_TAG, "Permission has been denied by user");
+                    storagePerm = false;
+
+                } else {
+
+                    Log.d(LOG_TAG, "Permission has been granted by user");
+                    storagePerm = true;
+
+                }
+
+                return;
+            }
+        }
+    }
+
 
     /**
      * Setting activity's subtitle
