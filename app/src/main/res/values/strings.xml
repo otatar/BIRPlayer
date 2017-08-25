@@ -45,6 +45,15 @@
     <string name="storage_permission_title">Potrebna dozvola</string>
     <string name="error_recording">Greška prilikom snimanja!</string>
     <string name="recordings_deleted">Odabrane sinmke su izbrisane</string>
+    <string name="all_radio_stations">Sve radio stanice</string>
+    <string name="favorite_radio_stations">Omiljene</string>
+    <string name="pop_radio_stations">Zabavna</string>
+    <string name="folk_radio_stations">Narodna</string>
+    <string name="sarajevo_radio_stations">Sarajevo</string>
+    <string name="recordings">Snimci</string>
+    <string name="about_string">O aplikaciji</string>
+    <string name="exit">Izlaz</string>
+
 
     <string-array name="drawer_items">
         <item>Sve radio stanice</item>

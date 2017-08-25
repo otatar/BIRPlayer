@@ -9,12 +9,14 @@ import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Build;
 import android.support.annotation.Nullable;
+import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -60,6 +62,9 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
     //Drawer Layout
     private DrawerLayout drawerLayout;
+
+    //Navigation View
+    private NavigationView navigationView;
 
     //Drawer toggle
     private StaticActionBarDrawerToggle actionBarDrawerToggle;
@@ -214,7 +219,6 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
         startActivity(intent);
 
-
     }
 
     @Override
@@ -271,7 +275,8 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         tabs = (TabLayout) findViewById(R.id.tabs);
         //Get references to views
         drawerLayout = (DrawerLayout) findViewById(R.id.navigation_drawer);
-        drawerList = (ListView) findViewById(R.id.list_view);
+        //drawerList = (ListView) findViewById(R.id.list_view);
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
 
         //From the top, create toolbar
         toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -282,26 +287,13 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
          //Init Navigation Drawer
 
-        //Show list header
-        View drawerHeader = getLayoutInflater().inflate(R.layout.drawer_header_view, null);
-        drawerList.addHeaderView(drawerHeader);
-
-        // Drawer list icons
-        int[] arrayIcons = {
-                R.drawable.list_all_icon,
-                R.drawable.list_favorite_icon,
-                R.drawable.list_pop_icon,
-                R.drawable.list_folk_icon,
-                R.drawable.list_sarajevo_icon,
-                R.drawable.list_recorded_icon
-        };
-        drawerList.setAdapter(new CustomDrawerListAdapter(this, getResources().getStringArray(R.array.drawer_items),
-                arrayIcons));
-
-        //Set listener for clicks on list
-        drawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            public boolean onNavigationItemSelected(MenuItem item) {
+
+                Log.d(LOG_TAG, "Clicked on: " + item.getTitle());
+                setActivitySubtitle(String.valueOf(item.getTitle()));
+
                 //Check current fragment
                 try {
                     currentFragment = (RadioStationListFragment) getSupportFragmentManager().findFragmentById(R.id.frame_layout);
@@ -313,15 +305,23 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
                     currentFragment = (RadioStationListFragment) getSupportFragmentManager().findFragmentByTag("visible_fragment");
                 }
 
+                if (item.getItemId() == R.id.about) {
+
+                    //Launch about
+                } else if (item.getItemId() == R.id.exit) {
+
+                    //Wel lets exit!!!
+                    finishAffinity();
+                }
+                currentFragment.filterRadioStations(item.getItemId());
+
                 //Close drawer
-                drawerLayout.closeDrawer(drawerList);
+                drawerLayout.closeDrawer(GravityCompat.START);
 
-                //Filter list currentFragment (we have a header and it is index 0)
-                Log.d(LOG_TAG, "Clicked on position: " + (position - 1));
-               currentFragment.filterRadioStations(position - 1);
+                return true;
             }
-
         });
+
 
         actionBarDrawerToggle = new StaticActionBarDrawerToggle(drawerLayout, toolbar, R.drawable.drawer_button_1,
                 R.string.open_drawer, R.string.close_drawer) {
@@ -341,7 +341,6 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
             }
 
         };
-
 
         //Add drawer toggle
         drawerLayout.addDrawerListener(actionBarDrawerToggle);

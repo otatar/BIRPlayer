@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/all_radio_stations"
+            android:icon="@drawable/list_all_icon"
+            android:title="@string/all_radio_stations" />
+        <item
+            android:id="@+id/favorite_radio_stations"
+            android:icon="@drawable/list_favorite_icon"
+            android:title="@string/favorite_radio_stations" />
+        <item
+            android:id="@+id/pop_radio_stations"
+            android:icon="@drawable/list_pop_icon"
+            android:title="@string/pop_radio_stations" />
+        <item
+            android:id="@+id/folk_radio_stations"
+            android:icon="@drawable/list_folk_icon"
+            android:title="@string/folk_radio_stations" />
+        <item
+            android:id="@+id/sarajevo_radio_stations"
+            android:icon="@drawable/list_sarajevo_icon"
+            android:title="@string/sarajevo_radio_stations" />
+        <item
+            android:id="@+id/recordings"
+            android:icon="@drawable/list_recorded_icon"
+            android:title="@string/recordings" />
+    </group>
+
+    <item android:title="">
+        <menu>
+            <item
+                android:id="@+id/about"
+                android:icon="@drawable/list_info_icon"
+                android:title="@string/about_string" />
+            <item
+                android:id="@+id/exit"
+                android:icon="@drawable/list_exit_icon"
+                android:title="@string/exit" />
+        </menu>
+    </item>
+
+</menu>

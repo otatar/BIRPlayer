@@ -805,7 +805,7 @@ public class RadioStationListFragment extends Fragment {
             case -1:
                 //Just return
                 return;
-            case 0:
+            case R.id.all_radio_stations:
                 //All, show all radio stations
                 radioStationsList.clear();
                 radioStationsList.addAll(RadioStationLab.getRadioStationsAll());
@@ -813,7 +813,7 @@ public class RadioStationListFragment extends Fragment {
                 radioStationAdapter.notifyDataSetChanged();
                 recyclerView.setAdapter(radioStationAdapter);
                 break;
-            case 1:
+            case R.id.favorite_radio_stations:
                 //Favorite
                 radioStationsList.clear();
                 radioStationsList.addAll(RadioStationLab.filterRadioStationByFavorite());
@@ -822,7 +822,7 @@ public class RadioStationListFragment extends Fragment {
                 radioStationAdapter.notifyDataSetChanged();
                 recyclerView.setAdapter(radioStationAdapter);
                 break;
-            case 2:
+            case R.id.pop_radio_stations:
                 //Pop
                 radioStationsList.clear();
                 radioStationsList.addAll(RadioStationLab.filterRadioStationsByGenre(RadioStationLab.radioGenrePop));
@@ -831,7 +831,7 @@ public class RadioStationListFragment extends Fragment {
                 radioStationAdapter.notifyDataSetChanged();
                 recyclerView.setAdapter(radioStationAdapter);
                 break;
-            case 3:
+            case R.id.folk_radio_stations:
                 //Folk
                 radioStationsList.clear();
                 radioStationsList.addAll(RadioStationLab.filterRadioStationsByGenre(RadioStationLab.radioGenreFolk));
@@ -840,7 +840,7 @@ public class RadioStationListFragment extends Fragment {
                 radioStationAdapter.notifyDataSetChanged();
                 recyclerView.setAdapter(radioStationAdapter);
                 break;
-            case 4:
+            case R.id.sarajevo_radio_stations:
                 //Location
                 radioStationsList.clear();
                 radioStationsList.addAll(RadioStationLab.filterRadioStationsByLocation("Sarajevo"));
@@ -849,7 +849,7 @@ public class RadioStationListFragment extends Fragment {
                 radioStationAdapter.notifyDataSetChanged();
                 recyclerView.setAdapter(radioStationAdapter);
                 break;
-            case 5:
+            case R.id.recordings:
                 //This is list of recordings
                 recordedRadioStationList.clear();
                 String baseDir = Environment.getExternalStorageDirectory().getAbsolutePath();
@@ -876,12 +876,6 @@ public class RadioStationListFragment extends Fragment {
                 //Do nothing
 
         }
-
-        //Set list type
-        list_type = type;
-
-        //Set subtitle
-        containerActivity.setActivitySubtitle(getResources().getStringArray(R.array.drawer_items)[type]);
 
     }
 
