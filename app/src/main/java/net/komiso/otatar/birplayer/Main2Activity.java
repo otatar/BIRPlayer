@@ -13,6 +13,7 @@ import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
@@ -292,7 +293,6 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
             public boolean onNavigationItemSelected(MenuItem item) {
 
                 Log.d(LOG_TAG, "Clicked on: " + item.getTitle());
-                setActivitySubtitle(String.valueOf(item.getTitle()));
 
                 //Check current fragment
                 try {
@@ -303,11 +303,16 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
                     changeTab();
                     getSupportFragmentManager().executePendingTransactions();
                     currentFragment = (RadioStationListFragment) getSupportFragmentManager().findFragmentByTag("visible_fragment");
+                    setActivitySubtitle(String.valueOf(item.getTitle()));
                 }
 
                 if (item.getItemId() == R.id.about) {
 
                     //Launch about
+                    FragmentManager fragmentManager = getSupportFragmentManager();
+                    AboutFragment aboutFragment = new AboutFragment();
+                    aboutFragment.show(fragmentManager, "O aplikaciji");
+
                 } else if (item.getItemId() == R.id.exit) {
 
                     //Wel lets exit!!!

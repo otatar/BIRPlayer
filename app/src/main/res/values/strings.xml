@@ -53,6 +53,8 @@
     <string name="recordings">Snimci</string>
     <string name="about_string">O aplikaciji</string>
     <string name="exit">Izlaz</string>
+    <string name="about">O aplikaciji</string>
+    <string name="created">Copyright: Komiso 2017.</string>
 
 
     <string-array name="drawer_items">
