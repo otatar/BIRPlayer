@@ -76,20 +76,6 @@
             android:orientation="vertical"
             android:layout_weight="1">
 
-            <ImageView
-                android:id="@+id/button_record"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@null"
-                android:src="@drawable/image_play_stop_record_toggle"/>
-
-            <TextView
-                android:id="@+id/recording_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="00:00:00" />
-
-
         </LinearLayout>
 
     </LinearLayout>
@@ -114,13 +100,6 @@
             android:maxLines="1"
             android:layout_marginTop="10dp"
             android:text="@string/status" />
-
-        <!--<TextView-->
-            <!--android:id="@+id/song_title"-->
-            <!--style="@style/shadowEffect"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:text="@string/no_song_title" />-->
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -181,6 +160,15 @@
             android:orientation="horizontal"
             android:paddingBottom="3dp">
 
+            <ImageView
+                android:id="@+id/button_record"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:background="@null"
+                android:layout_marginRight="10dp"
+                android:src="@drawable/image_play_stop_record_toggle"/>
+
             <ImageButton
                 android:id="@+id/button_backward"
                 android:layout_width="wrap_content"
@@ -197,7 +185,6 @@
                 android:background="@null"
                 android:src="@drawable/image_play_pause_toggle"/>
 
-
             <ImageButton
                 android:id="@+id/button_forward"
                 android:layout_width="wrap_content"
@@ -205,6 +192,15 @@
                 android:layout_gravity="center_vertical"
                 android:background="@null"
                 android:src="@drawable/ic_forward_toggle" />
+
+            <ImageButton
+                android:id="@+id/button_share"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:background="@null"
+                android:layout_marginLeft="10dp"
+                android:src="@drawable/ic_player_share"/>
 
         </LinearLayout>
 

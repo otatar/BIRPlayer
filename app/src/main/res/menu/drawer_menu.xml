@@ -35,6 +35,10 @@
                 android:icon="@drawable/list_info_icon"
                 android:title="@string/about_string" />
             <item
+                android:id="@+id/share"
+                android:icon="@drawable/ic_player_share"
+                android:title="@string/share" />
+            <item
                 android:id="@+id/exit"
                 android:icon="@drawable/list_exit_icon"
                 android:title="@string/exit" />

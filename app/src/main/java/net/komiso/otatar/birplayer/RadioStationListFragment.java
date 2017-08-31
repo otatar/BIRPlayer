@@ -17,6 +17,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
@@ -27,6 +28,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.ActionMode;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -41,6 +43,7 @@ import android.widget.ToggleButton;
 import com.dgreenhalgh.android.simpleitemdecoration.linear.DividerItemDecoration;
 
 import net.komiso.otatar.biplayer.R;
+import net.komiso.otatar.birplayer.utils.FileDateComparator;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -50,6 +53,7 @@ import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -83,6 +87,9 @@ public class RadioStationListFragment extends Fragment {
 
     //Recycler View
     private RecyclerView recyclerView;
+
+    //Menu edit button
+    private MenuItem editMenuItem;
 
     //Recycler View Adapter
     private RadioStationAdapter radioStationAdapter;
@@ -501,10 +508,13 @@ public class RadioStationListFragment extends Fragment {
 
             //Register holder for onClick events
             itemView.setOnClickListener(this);
+
+            //Callback for long clicks
             itemView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
                     Log.d(LOG_TAG, "onLongClick");
+                    v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
                     if (actionMode == null) actionMode = getActivity().startActionMode(mActionModeCallback);
                     Log.d(LOG_TAG, "Long pressed on position: " + recyclerView.getChildAdapterPosition(itemView));
                     selectedRecordings.add(recyclerView.getChildAdapterPosition(itemView));
@@ -617,9 +627,13 @@ public class RadioStationListFragment extends Fragment {
             Log.d(LOG_TAG, "Clicked on: " + listRecordingName.getText() + " at position " +
                     getAdapterPosition());
 
+            if (actionMode != null ) {
+                listCheckBox.toggle();
+            } else {
 
-            //Call method on activity
-            recordingSelectedListener.onRecordingSelected(getAdapterPosition(), recordedRadioStationList);
+                //Call method on activity
+                recordingSelectedListener.onRecordingSelected(getAdapterPosition(), recordedRadioStationList);
+            }
 
         }
 
@@ -729,7 +743,7 @@ public class RadioStationListFragment extends Fragment {
                     radioStationsList.addAll(RadioStationLab.getRadioStationsAll());
                     Log.d(LOG_TAG, "Radio station data refreshed!" + radioStationsList.size());
 
-                /* Inform Viewpager's adapter about change */
+                 /* Inform Viewpager's adapter about change */
                     recyclerView.getAdapter().notifyDataSetChanged();
 
                     //If refreshing animation is running, stop it
@@ -784,7 +798,6 @@ public class RadioStationListFragment extends Fragment {
             }
         });
 
-
         return v;
     }
 
@@ -799,6 +812,8 @@ public class RadioStationListFragment extends Fragment {
         if (tabs.getVisibility() == View.GONE) {
             tabs.setVisibility(View.VISIBLE);
         }
+
+        list_type = type;
 
         switch (type) {
 
@@ -859,6 +874,7 @@ public class RadioStationListFragment extends Fragment {
                 File recDir = new File(recDirString);
                 if (recDir.listFiles() != null) {
                     recordedRadioStationList.addAll(Arrays.asList(recDir.listFiles()));
+                    Collections.sort(recordedRadioStationList, new FileDateComparator());
                 }
                 recordedRadioStationAdapter = new RecordedRadioStationAdapter(getActivity(), recordedRadioStationList);
                 recyclerView.setAdapter(recordedRadioStationAdapter);

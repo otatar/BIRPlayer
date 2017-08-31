@@ -10,6 +10,7 @@ import android.graphics.LinearGradient;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -121,6 +122,9 @@ public class RecordedRadioPlayerFragment extends Fragment {
 
     /* Reference to backward button */
     private ImageButton btnBackward;
+
+    /* Reference to share button */
+    private ImageButton btnShare;
 
     /* Is paying time running */
     private boolean playingTimeRunning;
@@ -331,6 +335,7 @@ public class RecordedRadioPlayerFragment extends Fragment {
         btnPlay = (ImageView) v.findViewById(R.id.button_play);
         btnForward = (ImageButton) v.findViewById(R.id.button_forward);
         btnBackward = (ImageButton) v.findViewById(R.id.button_backward);
+        btnShare = (ImageButton) v.findViewById(R.id.button_share);
 
         runSeekBarTimer();
 
@@ -416,6 +421,21 @@ public class RecordedRadioPlayerFragment extends Fragment {
 
             }
         });
+
+        //Listener for share button
+        btnShare.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Share!!!
+                Uri recordeFile = Uri.parse(recordedRadioStation);
+                Intent iIntent = new Intent(Intent.ACTION_SEND);
+                iIntent.setType("audio/mpeg");
+                iIntent.putExtra(Intent.EXTRA_STREAM, recordeFile);
+                startActivity(Intent.createChooser(iIntent, getString(R.string.share_birp)));
+            }
+
+        });
+
 
         //Display radio station info
         updateRecordedRadioStationDisplay();

@@ -55,6 +55,11 @@
     <string name="exit">Izlaz</string>
     <string name="about">O aplikaciji</string>
     <string name="created">Copyright: Komiso 2017.</string>
+    <string name="share">Podjeli</string>
+    <string name="share_app_string">Uživajte u slušanju omiljenih bosanskohercegovačkih radio stanica putem BIR Player aplikacije. https://play.google.com/store/apps/details?id=net.komiso.otatar.birplayer</string>
+    <string name="share_birp">Podjeli BIR Player</string>
+    <string name="share_app_listen">Uživam slušati %s koristeći BIR Player. https://play.google.com/store/apps/details?id=net.komiso.otatar.birplayer</string>
+
 
 
     <string-array name="drawer_items">

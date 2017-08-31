@@ -294,31 +294,48 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
                 Log.d(LOG_TAG, "Clicked on: " + item.getTitle());
 
-                //Check current fragment
-                try {
-                    currentFragment = (RadioStationListFragment) getSupportFragmentManager().findFragmentById(R.id.frame_layout);
-
-                } catch (ClassCastException e) {
-                    Log.d(LOG_TAG, "RadioStationList not loaded, load it!");
-                    changeTab();
-                    getSupportFragmentManager().executePendingTransactions();
-                    currentFragment = (RadioStationListFragment) getSupportFragmentManager().findFragmentByTag("visible_fragment");
-                    setActivitySubtitle(String.valueOf(item.getTitle()));
-                }
-
                 if (item.getItemId() == R.id.about) {
 
                     //Launch about
                     FragmentManager fragmentManager = getSupportFragmentManager();
                     AboutFragment aboutFragment = new AboutFragment();
                     aboutFragment.show(fragmentManager, "O aplikaciji");
+                    //Close drawer
+                    drawerLayout.closeDrawer(GravityCompat.START);
+                    return false;
 
                 } else if (item.getItemId() == R.id.exit) {
 
                     //Wel lets exit!!!
                     finishAffinity();
+                    return false;
+
+                } else if (item.getItemId() == R.id.share) {
+
+                    //Share!!!
+                    Intent iIntent = new Intent(Intent.ACTION_SEND);
+                    iIntent.setType("text/plain");
+                    iIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.share_app_string));
+                    startActivity(Intent.createChooser(iIntent, getString(R.string.share_birp))                                                                                                                  );
+                    return false;
+
+                } else {
+
+                    //Check current fragment
+                    try {
+                        currentFragment = (RadioStationListFragment) getSupportFragmentManager().findFragmentById(R.id.frame_layout);
+
+                    } catch (ClassCastException e) {
+                        Log.d(LOG_TAG, "RadioStationList not loaded, load it!");
+                        changeTab();
+                        getSupportFragmentManager().executePendingTransactions();
+                        currentFragment = (RadioStationListFragment) getSupportFragmentManager().findFragmentByTag("visible_fragment");
+
+                    }
                 }
+
                 currentFragment.filterRadioStations(item.getItemId());
+                setActivitySubtitle(String.valueOf(item.getTitle()));
 
                 //Close drawer
                 drawerLayout.closeDrawer(GravityCompat.START);
@@ -561,6 +578,16 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
     }
 
+    @Override
+    public void onBackPressed() {
+
+        if (tabs.getSelectedTabPosition() == 1) {
+            changeTab();
+        } else {
+
+            super.onBackPressed();
+        }
+    }
 
     /**
      * Function to make permission request for DATA STORAGE

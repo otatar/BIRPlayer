@@ -123,6 +123,13 @@
             android:paddingBottom="3dp">
 
             <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="10dp"
+                android:visibility="invisible"/>
+
+            <ImageButton
                 android:id="@+id/button_backward"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -146,6 +153,15 @@
                 android:layout_gravity="center_vertical"
                 android:background="@null"
                 android:src="@drawable/ic_forward_toggle" />
+
+            <ImageButton
+                android:id="@+id/button_share"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:background="@null"
+                android:layout_marginLeft="10dp"
+                android:src="@drawable/ic_player_share"/>
 
         </LinearLayout>
 

@@ -118,6 +118,9 @@ public class RadioPlayerFragment extends Fragment {
     /* Reference to record button */
     private ImageView btnRecord;
 
+    /* Reference to image button */
+    private ImageButton btnShare;
+
     /* Reference to status TextView */
     private TextView statusTextView;
 
@@ -395,6 +398,7 @@ public class RadioPlayerFragment extends Fragment {
         btnForward = (ImageButton) v.findViewById(R.id.button_forward);
         btnBackward = (ImageButton) v.findViewById(R.id.button_backward);
         btnRecord = (ImageView) v.findViewById(R.id.button_record);
+        btnShare = (ImageButton) v.findViewById(R.id.button_share);
 
         //Disable the record button if we didn't get the storage permission and we are not playing
         btnRecord.setEnabled(false);
@@ -508,6 +512,19 @@ public class RadioPlayerFragment extends Fragment {
                 }
 
             }
+        });
+
+        //Listener for share button
+        btnShare.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Share!!!
+                Intent iIntent = new Intent(Intent.ACTION_SEND);
+                iIntent.setType("text/plain");
+                iIntent.putExtra(Intent.EXTRA_TEXT, getString(R.string.share_app_listen, radioStation.getRadioStationName()));
+                startActivity(Intent.createChooser(iIntent, getString(R.string.share_birp)));
+            }
+
         });
 
         //Display radio station info
