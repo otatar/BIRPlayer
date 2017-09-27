@@ -129,6 +129,10 @@ public class RadioStationListFragment extends Fragment {
 
     private static boolean recordingPlaying = false;
 
+    private int recordingRadioStationPosition;
+
+    private static boolean needRefresh = true;
+
 
     /**
      * Interface implemented by container activity
@@ -434,18 +438,18 @@ public class RadioStationListFragment extends Fragment {
      */
     private class RecordedRadioStationAdapter extends RecyclerView.Adapter<RecordedRadioStationHolder> {
 
-        private ArrayList<File> recordedRadioStationList;
+        private ArrayList<File> recordedRadioStationList = new ArrayList<>();
         private Activity activity;
 
         public RecordedRadioStationAdapter(Activity activity, ArrayList<File> recordedRadioStationList) {
-            this.recordedRadioStationList = recordedRadioStationList;
+            this.recordedRadioStationList.addAll(recordedRadioStationList);
             this.activity = activity;
 
         }
 
         //Setter for radioStationList
         public void seRecordedRadioStationList(ArrayList<File> recordedRadioStationList) {
-            this.recordedRadioStationList = recordedRadioStationList;
+            this.recordedRadioStationList.addAll(recordedRadioStationList);
         }
 
         @Override
@@ -461,7 +465,6 @@ public class RadioStationListFragment extends Fragment {
         public void onBindViewHolder(final RecordedRadioStationHolder holder, final int position) {
 
             final File recordedRadioStation = recordedRadioStationList.get(position);
-
 
             //Click listener
             holder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -502,7 +505,7 @@ public class RadioStationListFragment extends Fragment {
             listRecordingName = (TextView) itemView.findViewById(R.id.list_recording_filename);
             listRecordingDuration = (TextView) itemView.findViewById(R.id.list_recording_duration);
             listRecordingDate = (TextView) itemView.findViewById(R.id.list_recording_date);
-            playPauseToggle = (ToggleButton) itemView.findViewById(R.id.button_play_pause);
+            playPauseToggle = (ToggleButton) itemView.findViewById(R.id.button_play_pause_recorded);
             listFormatInfo = (TextView) itemView.findViewById(R.id.list_format_info);
             listCheckBox = (CheckBox) itemView.findViewById(R.id.list_checkbox);
 
@@ -528,20 +531,19 @@ public class RadioStationListFragment extends Fragment {
 
         void bindRecordedRadioStation(final File recordingRadioStation, ArrayList<File> list, final int position) {
 
-            Log.d(LOG_TAG, "bindRecordedRadioStation");
+            Log.d(LOG_TAG, "bindRecordedRadioStation: " + position);
 
             // Reset typeface
             listRecordingName.setTypeface(null, Typeface.NORMAL);
             listRecordingDuration.setTypeface(null, Typeface.NORMAL);
             listRecordingDate.setTypeface(null, Typeface.NORMAL);
 
-            if (!recordingPlaying) {
-                if (playPauseToggle.isChecked()) {
-                    Log.d(LOG_TAG, "Checked!");
-                    playPauseToggle.setChecked(false);
-                }
-            }
+            playPauseToggle.setChecked(false);
 
+            if (recordingRadioStationPosition == position && recordingPlaying) {
+                Log.d(LOG_TAG, "Set playing on position: " + position);
+                playPauseToggle.setChecked(true);
+            }
 
             // Set the content of views
             listRecordingName.setText(recordingRadioStation.getName().substring(0, recordingRadioStation.getName().length() - 4));
@@ -565,9 +567,25 @@ public class RadioStationListFragment extends Fragment {
             if (actionMode != null) {
                 listCheckBox.setVisibility(View.VISIBLE);
                 //And check it it they are selected
+                Log.d(LOG_TAG, "Size: " + selectedRecordings.size());
                 if (selectedRecordings.contains(position)) {
+                    listCheckBox.setOnCheckedChangeListener(null);
                     listCheckBox.setChecked(true);
                 }
+
+                //Handle click on checkbox (adding here callback helps avoiding double entries in set)
+                listCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                        if (isChecked) {
+                            Log.d(LOG_TAG, "Adding position: " + position);
+                            selectedRecordings.add(position);
+                        } else {
+                            selectedRecordings.remove(position);
+                        }
+                    }
+                });
+
             } else {
                 listCheckBox.setVisibility(View.GONE);
                 listCheckBox.setChecked(false);
@@ -580,40 +598,16 @@ public class RadioStationListFragment extends Fragment {
                 public void onClick(View v) {
 
                     Log.d(LOG_TAG, "Clicked play button on " + recordingRadioStation.getName() + " recording");
-                    //RadioPlayerFragment.deselectAllRadioStations(radioStationsList);
-                    //RadioPlayerFragment.stopAllRadioStations(radioStationsList);
-                   /* radioStation.setSelected(true);
-                    selectedRadioStation = radioStation;
-                    containerActivity.onRadioStationSelected(radioStationsList.indexOf(radioStation), radioStationsList, false);*/
-
                     if (playPauseToggle.isChecked()) {
 
                         Log.d(LOG_TAG, "Play " + recordingRadioStation.getName());
+                        recordingRadioStationPosition = getAdapterPosition();
                         containerActivity.onRecordingPlay(recordingRadioStation.getAbsolutePath(), false);
-                       // radioStation.setConnecting(true);
-
 
                     } else {
 
                         Log.d(LOG_TAG, "Pause " + recordingRadioStation.getName());
                         containerActivity.onRecordingPlay(recordingRadioStation.getAbsolutePath(), true);
-                        //radioStation.setConnecting(false);
-
-                    }
-
-                    //recyclerView.getAdapter().notifyDataSetChanged();
-                }
-            });
-
-
-            //Handle click on checkbox
-            listCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    if (isChecked) {
-                        selectedRecordings.add(position);
-                    } else {
-                        selectedRecordings.remove(position);
                     }
                 }
             });
@@ -629,6 +623,7 @@ public class RadioStationListFragment extends Fragment {
 
             if (actionMode != null ) {
                 listCheckBox.toggle();
+
             } else {
 
                 //Call method on activity
@@ -668,6 +663,7 @@ public class RadioStationListFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         selectedRadioStation = (RadioStation) getArguments().getSerializable("radiostation");
+        Log.d(LOG_TAG, "Refresh: " + (Boolean) getArguments().getBoolean("refresh"));
 
     }
 
@@ -675,6 +671,8 @@ public class RadioStationListFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
+        Log.d(LOG_TAG, "onCreateView");
         // Inflate the layout for this fragment
         final View v = inflater.inflate(R.layout.fragment_radio_station_list, container, false);
 
@@ -687,7 +685,7 @@ public class RadioStationListFragment extends Fragment {
         /* Reference to radio station lab object */
         radioStationLab = RadioStationLab.get(getActivity());
 
-        if (getArguments().getBoolean("refresh")) {
+        if (getArguments().getBoolean("refresh") && needRefresh) {
 
             //Start SwipeRefreshLayout animation (this is workaround, cause there is a bug in api: https://code.google.com/p/android/issues/detail?id=77712)
             swipeRefresh.post(new Runnable() {
@@ -742,8 +740,9 @@ public class RadioStationListFragment extends Fragment {
                     radioStationsList.clear();
                     radioStationsList.addAll(RadioStationLab.getRadioStationsAll());
                     Log.d(LOG_TAG, "Radio station data refreshed!" + radioStationsList.size());
+                    needRefresh = false;
 
-                 /* Inform Viewpager's adapter about change */
+                    /* Inform Viewpager's adapter about change */
                     recyclerView.getAdapter().notifyDataSetChanged();
 
                     //If refreshing animation is running, stop it
@@ -751,7 +750,6 @@ public class RadioStationListFragment extends Fragment {
                         Log.d(LOG_TAG, "Refreshing...");
                         swipeRefresh.setRefreshing(false);
                     }
-
 
                     //Show recycler view
                     recyclerView.setVisibility(View.VISIBLE);
@@ -764,12 +762,6 @@ public class RadioStationListFragment extends Fragment {
         radioStationsList.addAll(RadioStationLab.getRadioStationsAll());
         radioStationAdapter = new RadioStationAdapter(getActivity(), radioStationsList);
 
-        //If the list is partial
-        if (list_type != 0) {
-            filterRadioStations(list_type);
-            radioStationAdapter.notifyDataSetChanged();
-        }
-
         //Setting up recycler view
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
@@ -781,6 +773,12 @@ public class RadioStationListFragment extends Fragment {
         recyclerView.setAdapter(radioStationAdapter);
         (recyclerView.getLayoutManager()).scrollToPosition(radioStationsList.indexOf(selectedRadioStation));
         recyclerView.setVisibility(View.VISIBLE);
+
+        //If the list is partial
+        if (list_type != 0) {
+            filterRadioStations(list_type);
+            recyclerView.getAdapter().notifyDataSetChanged();
+        }
 
         // Register listener for swipe refresh, refreshes radio list in background
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -812,6 +810,8 @@ public class RadioStationListFragment extends Fragment {
         if (tabs.getVisibility() == View.GONE) {
             tabs.setVisibility(View.VISIBLE);
         }
+        if (swipeRefresh != null)
+        swipeRefresh.setEnabled(true);
 
         list_type = type;
 
@@ -836,6 +836,7 @@ public class RadioStationListFragment extends Fragment {
                 radioStationAdapter.setRadioStationList(radioStationsList);
                 radioStationAdapter.notifyDataSetChanged();
                 recyclerView.setAdapter(radioStationAdapter);
+
                 break;
             case R.id.pop_radio_stations:
                 //Pop
@@ -865,6 +866,7 @@ public class RadioStationListFragment extends Fragment {
                 recyclerView.setAdapter(radioStationAdapter);
                 break;
             case R.id.recordings:
+                Log.d(LOG_TAG, "Filter recordings");
                 //This is list of recordings
                 recordedRadioStationList.clear();
                 String baseDir = Environment.getExternalStorageDirectory().getAbsolutePath();
@@ -877,10 +879,13 @@ public class RadioStationListFragment extends Fragment {
                     Collections.sort(recordedRadioStationList, new FileDateComparator());
                 }
                 recordedRadioStationAdapter = new RecordedRadioStationAdapter(getActivity(), recordedRadioStationList);
+                recordedRadioStationAdapter.seRecordedRadioStationList(recordedRadioStationList);
+                recordedRadioStationAdapter.notifyDataSetChanged();
                 recyclerView.setAdapter(recordedRadioStationAdapter);
 
                 //Hide tab bar
                 tabs.setVisibility(View.GONE);
+                swipeRefresh.setEnabled(false);
 
                  /* Stop media player if it is playing */
                 Intent stopIntent = new Intent(getActivity(), RadioPlayerService.class);
@@ -899,12 +904,6 @@ public class RadioStationListFragment extends Fragment {
     public void filterRadioStationByName(String name) {
 
         Log.d(LOG_TAG, "filterRadioStationsByName()");
-
-        /*radioStationsList.clear();
-        radioStationsList = RadioStationLab.filterRadioStationByName(name);
-        isRadioStationListPartial = true;
-        radioStationAdapter.setRadioStationList(radioStationsList);
-        radioStationAdapter.notifyDataSetChanged();*/
 
         ArrayList<RadioStation> list = new ArrayList<>();
 

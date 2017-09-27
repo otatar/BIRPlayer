@@ -85,8 +85,8 @@ public class RadioStreamRecorder {
 
         //Input
         if(BuildConfig.DEBUG) Log.d(LOG_TAG, "Starting to record: " + radioStationName);
-        //URL url = new URL(radioURL);
-        URL url = new URL(RadioPlayerFragment.RADIO_LOCAL_URL);
+        URL url = new URL(radioURL);
+        //URL url = new URL(RadioPlayerFragment.RADIO_LOCAL_URL);
         // We need to set connection timeout
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setConnectTimeout(3000);

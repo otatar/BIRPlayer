@@ -19,7 +19,7 @@
         <!--android:src="@drawable/list_play_icon" />-->
 
         <ToggleButton
-            android:id="@+id/button_play_pause"
+            android:id="@+id/button_play_pause_recorded"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"

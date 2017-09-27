@@ -4,11 +4,11 @@
       {
         "station_location": "Sarajevo",
         "id": 1,
-        "station_url": "www.radioba.ba",
-        "listen_type": 1,
-        "station_genre": "pop, folk, zabavna, narodna",
-        "station_name": "Radio Ba",
-        "listen_url": "http://streaming.radioba.ba:10002/radio_Ba"
+        "station_url": "www.antena.ba",
+        "listen_type": 0,
+        "station_genre": "pop, zabavna, urban",
+        "station_name": "Radio Antena",
+        "listen_url": "http://195.222.57.33:8070"
       },
       {
         "station_location": "Sarajevo",
@@ -31,11 +31,11 @@
       {
         "station_location": "Sarajevo",
         "id": 4,
-        "station_url": "www.antena.ba",
-        "listen_type": 0,
-        "station_genre": "pop, zabavna, urban",
-        "station_name": "Radio Antena",
-        "listen_url": "http://195.222.57.33:8070"
+        "station_url": "www.radioba.ba",
+        "listen_type": 1,
+        "station_genre": "pop, folk, zabavna, narodna",
+        "station_name": "Radio Ba",
+        "listen_url": "http://streaming.radioba.ba:10002/radio_Ba"
       },
       {
         "station_location": "Sarajevo",
@@ -218,13 +218,13 @@
         "listen_url": "http://188.124.211.103:8100//big1"
       },
       {
-        "station_location": "Sapna",
+        "station_location": "Sarajevo",
         "id": 28,
-        "station_url": "http://www.radioglasdrine.com/",
+        "station_url": "www.radiosarajevo.ba",
         "listen_type": 0,
-        "station_genre": "folk, narodna, etno",
-        "station_name": "Radio Glas Drine",
-        "listen_url": "http://77.74.231.21:8028"
+        "station_genre": "pop, rock, zabavna",
+        "station_name": "Radio Sarajevo",
+        "listen_url": "http://malla.softnet.si:8000/"
       },
       {
         "station_location": "Doboj",
@@ -441,8 +441,162 @@
         "station_genre": "zabavna, pop, folk, narodna",
         "station_name": "Radio Foča",
         "listen_url": "http://188.40.62.20:8068/"
+      },
+      {
+        "station_location": "Konjic",
+        "id": 51,
+        "station_url": "",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, narodna, urban",
+        "station_name": "Radio Konjic",
+        "listen_url": "http://78.129.234.163:4531/"
+      },
+      {
+        "station_location": "Kalesija",
+        "id": 52,
+        "station_url": "",
+        "listen_type": 0,
+        "station_genre": "narodna, folk, etno",
+        "station_name": "Radio Bombonica",
+        "listen_url": "http://4stream.pl:18716/"
+      },
+      {
+      "station_location": "Sarajevo",
+      "id": 53,
+      "station_url": "",
+      "listen_type": 0,
+      "station_genre": "narodna, folk",
+      "station_name": "Radio Balkan DJ",
+      "listen_url": "http://balkan.dj.topstream.net:8070/"
+      },
+      {
+        "station_location": "Sapna",
+        "id": 54,
+        "station_url": "http://www.radioglasdrine.com/",
+        "listen_type": 0,
+        "station_genre": "folk, narodna, etno",
+        "station_name": "Radio Glas Drine",
+        "listen_url": "http://77.74.231.21:8028"
+      },
+      {
+        "station_location": "Sarajevo",
+        "id": 55,
+        "station_url": "http://www.radiosehara.net",
+        "listen_type": 0,
+        "station_genre": "folk, narodna, etno",
+        "station_name": "Radio Sehara",
+        "listen_url": "http://5.9.25.50:9320/"
+      },
+      {
+        "station_location": "Velika Kladuša",
+        "id": 56,
+        "station_url": "http://www.velkaton.ba",
+        "listen_type": 0,
+        "station_genre": "folk, narodna",
+        "station_name": "Radio Velkaton",
+        "listen_url": "http://188.40.62.20:8016/"
+      },
+      {
+        "station_location": "Tuzla",
+        "id": 57,
+        "station_url": "http://www.kameleon.ba",
+        "listen_type": 0,
+        "station_genre": "pop, zabavna",
+        "station_name": "Radio Kameleon Caffe Chill",
+        "listen_url": "http://78.47.39.139:8100/"
+      },
+      {
+        "station_location": "Srebrenik",
+        "id": 58,
+        "station_url": "www.studiod.ba",
+        "listen_type": 0,
+        "station_genre": "pop, zabavna, narodna, folk",
+        "station_name": "Radio Studio D",
+        "listen_url": "http://studiod.omerovic.info:8018/"
+      },
+      {
+        "station_location": "Bijeljina",
+        "id": 59,
+        "station_url": "www.radiodas.net",
+        "listen_type": 0,
+        "station_genre": "narodna, folk",
+        "station_name": "Radio Das",
+        "listen_url": "http://servis-racunara.org:1231/"
+      },
+      {
+        "station_location": "Ugljevik",
+        "id": 60,
+        "station_url": "www.skalaradio.net",
+        "listen_type": 0,
+        "station_genre": "narodna, folk",
+        "station_name": "Radio Skala",
+        "listen_url": "http://188.40.62.20:8049/"
+      },
+      {
+        "station_location": "Odžak",
+        "id": 61,
+        "station_url": "http://www.radiopreporod.com",
+        "listen_type": 0,
+        "station_genre": "narodna, zabavna",
+        "station_name": "Radio Preporod",
+        "listen_url": "http://s1.voscast.com:7986/"
+      },
+      {
+      "station_location": "Novi Travnik",
+      "id": 62,
+      "station_url": "http://www.drukciji.ba",
+      "listen_type": 0,
+      "station_genre": "zabavna, pop",
+      "station_name": "Drukčiji Radio",
+      "listen_url": "http://185.99.0.240:9998/"
+      },
+      {
+        "station_location": "Srebrenik",
+        "id": 63,
+        "station_url": "http://www.radiosrebrenik.ba",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop",
+        "station_name": "Radio Srebrenik",
+        "listen_url": "http://radiosrebrenik.omerovic.info:7600/"
+      },
+      {
+        "station_location": "Kalesija",
+        "id": 64,
+        "station_url": "www.radio-feral.ba",
+        "listen_type": 0,
+        "station_genre": "zabavna, narodna, folk",
+        "station_name": "Radio Feral",
+        "listen_url": "http://185.50.56.3/"
+      },
+      {
+        "station_location": "Prijedor",
+        "id": 65,
+        "station_url": "http://www.bosnaexpres.fr",
+        "listen_type": 0,
+        "station_genre": "zabavna, narodna, folk",
+        "station_name": "Radio Bosna Express",
+        "listen_url": "http://expres-bosna.no-ip.biz:1936/"
+      },
+      {
+        "station_location": "Odžak",
+        "id": 66,
+        "station_url": "http://www.radioodzak.com",
+        "listen_type": 0,
+        "station_genre": "zabavna, narodna, folk",
+        "station_name": "Radio Odžak",
+        "listen_url": "http://radioodzak.com:8000/"
+      },
+      {
+        "station_location": "Breza",
+        "id": 67,
+        "station_url": "http://www.radiobreza.com.ba",
+        "listen_type": 0,
+        "station_genre": "zabavna, narodna, folk",
+        "station_name": "Radio Breza",
+        "listen_url": "http://velebithosting.net:8040/"
       }
+
     ],
-    "quantity": "50"
+    "quantity": "67"
   }
 }

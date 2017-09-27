@@ -50,6 +50,8 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
     //Bundle keys
     public static String SELECTED_RADIO_STATION = "selected_position";
     public static String REC_FILEPATH = "rec_filepath";
+    public static String CURRENT_FILTER = "current_filter";
+    public static String CURRENT_TITLE = "current_title";
 
     private static final int REQUEST_WRITE_STORAGE = 112;
 
@@ -70,9 +72,6 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
     //Drawer toggle
     private StaticActionBarDrawerToggle actionBarDrawerToggle;
 
-    //List View
-    private ListView drawerList;
-
     //Tab layout
     private TabLayout tabs;
 
@@ -90,6 +89,12 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
     //Selected radio station list
     private static ArrayList<RadioStation> selectedRadioStationList = new ArrayList<>();
+
+    //Current filter
+    private int currentFilter = 0;
+
+    //Current title
+    private String currentTitle;
 
 
     /**
@@ -186,11 +191,6 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         Log.d(LOG_TAG, "onRecordingPlay");
 
         if (!stopRadioStation) {
-
-            //First, stop previous radio station
-           /* Intent stopIntent = new Intent(this, RadioPlayerService.class);
-            stopIntent.setAction(RadioPlayerFragment.ACTION_STOP);
-            startService(stopIntent);*/
 
             //Play
             Intent playIntent = new Intent(this, RadioPlayerService.class);
@@ -336,6 +336,8 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
                 currentFragment.filterRadioStations(item.getItemId());
                 setActivitySubtitle(String.valueOf(item.getTitle()));
+                currentFilter = item.getItemId();
+                currentTitle = String.valueOf(item.getTitle());
 
                 //Close drawer
                 drawerLayout.closeDrawer(GravityCompat.START);
@@ -445,6 +447,8 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
         } else if (intent.getAction().equals(Intent.ACTION_MAIN) && savedInstanceState != null) {
 
+            tabs.setVisibility(View.VISIBLE);
+
             //Restarted due to change in configuration (screen rotation)
             if (radioStationListFragmentInForeground) {
 
@@ -459,6 +463,21 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
                 FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                 ft.add(R.id.frame_layout, fragment);
                 ft.commit();
+
+                /*//Check current fragment
+                try {
+                    currentFragment = (RadioStationListFragment) getSupportFragmentManager().findFragmentById(R.id.frame_layout);
+
+                } catch (ClassCastException e) {
+                    Log.d(LOG_TAG, "RadioStationList not loaded, load it!");
+                    changeTab();
+                    getSupportFragmentManager().executePendingTransactions();
+                    currentFragment = (RadioStationListFragment) getSupportFragmentManager().findFragmentByTag("visible_fragment");
+                }
+
+                Log.d(LOG_TAG, "Current filter: " + savedInstanceState.getInt(CURRENT_FILTER));
+                currentFragment.filterRadioStations(savedInstanceState.getInt(CURRENT_FILTER));*/
+                setActivitySubtitle(savedInstanceState.getString(CURRENT_TITLE));
             } else {
                 changeTab();
             }
@@ -466,7 +485,7 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         } else {
 
             //Whe have been started by the launcher, so start the RadioStationListFragment
-
+            Log.d(LOG_TAG, "Stared by the launcher!");
             // Check network connection and alter user about it
             checkAndAlertNetworkConnection();
 
@@ -480,17 +499,20 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
 
     }
 
+
     @Override
     protected void onPostCreate(@Nullable Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
         actionBarDrawerToggle.syncState();
     }
 
+
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         actionBarDrawerToggle.onConfigurationChanged(newConfig);
     }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -499,6 +521,7 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         }
         return super.onOptionsItemSelected(item);
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -571,12 +594,15 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         Log.d(LOG_TAG, "onDestroy()");
     }
 
+
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         Log.d(LOG_TAG, "onSaveInstanceState()");
-
+        outState.putInt(CURRENT_FILTER, currentFilter);
+        outState.putString(CURRENT_TITLE, currentTitle);
     }
+
 
     @Override
     public void onBackPressed() {

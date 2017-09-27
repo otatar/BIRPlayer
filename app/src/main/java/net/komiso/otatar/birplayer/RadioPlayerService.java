@@ -186,7 +186,6 @@ public class RadioPlayerService extends Service {
                         sendAlert(RadioPlayerFragment.SEND_BITRATE, bitRate);
                     }
 
-
                 }
 
             } else if (msg.what == RadioPlayerFragment.SEND_ACTION) {
@@ -479,9 +478,9 @@ public class RadioPlayerService extends Service {
             public void onCompletion(MediaPlayer mp) {
 
                 Log.d(LOG_TAG, "onCompletion");
-
                 setMPState(MP_NOT_READY);
-
+                playingTimeRunning = false;
+                playingSecs = 0;
                 sendAlert(RadioPlayerFragment.SEND_COMPLETION, "");
             }
         });
@@ -515,8 +514,8 @@ public class RadioPlayerService extends Service {
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         Log.d(LOG_TAG, "Setting data source: " + mediaURL);
         try {
-            mediaPlayer.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL);
-            //mediaPlayer.setDataSource(mediaURL);
+            //mediaPlayer.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL);
+            mediaPlayer.setDataSource(mediaURL);
         } catch (Exception e) {
             Log.d(LOG_TAG, radioStation.getListenUrl() + e.toString());
             setMPState(RadioPlayerService.MP_ERROR);
@@ -599,6 +598,7 @@ public class RadioPlayerService extends Service {
             }
 
             mediaPlayer.start();
+            playingTimeRunning = true;
             setMPState(RadioPlayerService.MP_PLAYING);
             sendStatus();
         }
@@ -616,10 +616,10 @@ public class RadioPlayerService extends Service {
         if (mpState.equals(RadioPlayerService.MP_PLAYING)) {
             mediaPlayer.pause();
             setMPState(RadioPlayerService.MP_PAUSED);
+            playingTimeRunning = false;
             sendStatus();
             if (!isRecPlaying) {
                 radioStation.setPlaying(false);
-                playingTimeRunning = false;
 
                 //Stop retrieving meta data from server
                 if (radioStation.getListenType().equals("0") || radioStation.getListenType().equals("1")) {
@@ -840,8 +840,8 @@ public class RadioPlayerService extends Service {
         HashMap<String, String> metadata = new HashMap<>();
 
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-        //mediaMetadataRetriever.setDataSource(radioStation.getListenUrl(), metadata);
-        mediaMetadataRetriever.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL, metadata);
+        mediaMetadataRetriever.setDataSource(radioStation.getListenUrl(), metadata);
+        //mediaMetadataRetriever.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL, metadata);
 
 
         bitRate = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
