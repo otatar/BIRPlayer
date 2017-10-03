@@ -12,6 +12,7 @@ import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -396,12 +397,13 @@ public class RadioPlayerService extends Service {
             @Override
             public void onPrepared(MediaPlayer mediaPlayer) {
 
+                Log.d(LOG_TAG, "onPrepared");
+
                 //If we are playing file, than we don't need onPrepared callback
-                if (mediaPlayer.getDuration() != -1) {
+                Log.d(LOG_TAG, String.valueOf(mediaPlayer.getDuration()));
+                if (mediaPlayer.getDuration() > 1) {
                     return;
                 }
-
-                Log.d(LOG_TAG, "onPrepared");
 
                 // We are ready
                 setMPState(RadioPlayerService.MP_READY);
@@ -514,8 +516,8 @@ public class RadioPlayerService extends Service {
         mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         Log.d(LOG_TAG, "Setting data source: " + mediaURL);
         try {
-            //mediaPlayer.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL);
-            mediaPlayer.setDataSource(mediaURL);
+            //mediaPlayer.setDataSource(this, Uri.parse(RadioPlayerFragment.RADIO_LOCAL_URL));
+            mediaPlayer.setDataSource(this, Uri.parse(mediaURL));
         } catch (Exception e) {
             Log.d(LOG_TAG, radioStation.getListenUrl() + e.toString());
             setMPState(RadioPlayerService.MP_ERROR);
@@ -842,7 +844,6 @@ public class RadioPlayerService extends Service {
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
         mediaMetadataRetriever.setDataSource(radioStation.getListenUrl(), metadata);
         //mediaMetadataRetriever.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL, metadata);
-
 
         bitRate = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
         Log.d(LOG_TAG, "Bitrate: " + bitRate);

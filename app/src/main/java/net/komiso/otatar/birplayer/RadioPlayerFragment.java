@@ -208,6 +208,11 @@ public class RadioPlayerFragment extends Fragment {
                 } else if (bundle.getString(STATUS).equals(RadioPlayerService.MP_PAUSED)) {
                     playingTimeRunning = false;
 
+                } else if (bundle.getString(STATUS).equals(RadioPlayerService.MP_CONNECTING)) {
+                    if (!btnPlay.isActivated()) {
+                        btnPlay.setActivated(true);
+                    }
+
                 } else if (bundle.getString(STATUS).equals(RadioPlayerService.MP_STOPPED)) {
 
                     playingTimeRunning = false;
@@ -220,7 +225,6 @@ public class RadioPlayerFragment extends Fragment {
                     }
                     btnRecord.setEnabled(false);
                     stopRecording();
-
 
                 } else {
 
