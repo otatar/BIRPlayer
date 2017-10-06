@@ -609,6 +609,7 @@ public class RadioStationListFragment extends Fragment {
                         Log.d(LOG_TAG, "Pause " + recordingRadioStation.getName());
                         containerActivity.onRecordingPlay(recordingRadioStation.getAbsolutePath(), true);
                     }
+                    recyclerView.getAdapter().notifyDataSetChanged();
                 }
             });
 
@@ -879,7 +880,6 @@ public class RadioStationListFragment extends Fragment {
                     Collections.sort(recordedRadioStationList, new FileDateComparator());
                 }
                 recordedRadioStationAdapter = new RecordedRadioStationAdapter(getActivity(), recordedRadioStationList);
-                recordedRadioStationAdapter.seRecordedRadioStationList(recordedRadioStationList);
                 recordedRadioStationAdapter.notifyDataSetChanged();
                 recyclerView.setAdapter(recordedRadioStationAdapter);
 

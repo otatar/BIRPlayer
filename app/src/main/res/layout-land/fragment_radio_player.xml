@@ -128,42 +128,20 @@
                 android:text="0 kbps" />
 
         </LinearLayout>
-
-        <!--<me.itangqi.waveloadingview.WaveLoadingView
-            android:id="@+id/waveLoadingView"
-            android:layout_width="200dp"
-            android:layout_height="300dp"
-            android:layout_gravity="center_horizontal"
-            app:wlv_borderColor="@color/colorPrimary"
-            app:wlv_borderWidth="1dp"
-            app:wlv_progressValue="60"
-            app:wlv_shapeType="circle"
-            app:wlv_round_rectangle="true"
-            app:wlv_triangle_direction="north"
-            app:wlv_titleTopStrokeColor="@android:color/holo_blue_dark"
-            app:wlv_titleTopStrokeWidth="3dp"
-            app:wlv_titleTop=""
-            app:wlv_titleTopColor="@android:color/white"
-            app:wlv_titleTopSize="15sp"
-            app:wlv_titleCenterStrokeColor="@android:color/holo_blue_dark"
-            app:wlv_titleCenterStrokeWidth="3dp"
-            app:wlv_titleCenter=""
-            app:wlv_titleCenterColor="@android:color/white"
-            app:wlv_titleCenterSize="15sp"
-            app:wlv_titleBottomStrokeColor="@android:color/holo_blue_dark"
-            app:wlv_titleBottomStrokeWidth="3dp"
-            app:wlv_titleBottom=""
-            app:wlv_titleBottomColor="@android:color/white"
-            app:wlv_titleBottomSize="15sp"
-            app:wlv_waveAmplitude="0"
-            app:wlv_waveColor="@color/colorAccent"/> -->
-
-
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:paddingBottom="3dp">
+
+            <ImageView
+                android:id="@+id/button_record"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:background="@null"
+                android:layout_marginRight="10dp"
+                android:src="@drawable/image_play_stop_record_toggle"/>
 
             <ImageButton
                 android:id="@+id/button_backward"
@@ -188,6 +166,15 @@
                 android:layout_gravity="center_vertical"
                 android:background="@null"
                 android:src="@drawable/ic_forward_toggle" />
+
+            <ImageButton
+                android:id="@+id/button_share"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:background="@null"
+                android:layout_marginLeft="10dp"
+                android:src="@drawable/ic_player_share"/>
 
         </LinearLayout>
 

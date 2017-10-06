@@ -405,7 +405,9 @@ public class RadioPlayerFragment extends Fragment {
         btnShare = (ImageButton) v.findViewById(R.id.button_share);
 
         //Disable the record button if we didn't get the storage permission and we are not playing
-        btnRecord.setEnabled(false);
+        if (btnRecord != null) {
+            btnRecord.setEnabled(false);
+        }
 
         //Run the playing timer handler
         runTimer();

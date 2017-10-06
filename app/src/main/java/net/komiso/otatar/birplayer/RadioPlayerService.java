@@ -283,6 +283,7 @@ public class RadioPlayerService extends Service {
                 Bundle bundle = intent.getExtras();
                 recFilePath = bundle.getString(Main2Activity.REC_FILEPATH);
                 Log.d(LOG_TAG, "Received recording: " + recFilePath);
+                stopMediaPlayer();
                 startRecMediaPlayer(recFilePath);
 
             }
@@ -400,7 +401,6 @@ public class RadioPlayerService extends Service {
                 Log.d(LOG_TAG, "onPrepared");
 
                 //If we are playing file, than we don't need onPrepared callback
-                Log.d(LOG_TAG, String.valueOf(mediaPlayer.getDuration()));
                 if (mediaPlayer.getDuration() > 1) {
                     return;
                 }
@@ -839,16 +839,22 @@ public class RadioPlayerService extends Service {
      */
     private void retrieveBitRate() {
 
-        HashMap<String, String> metadata = new HashMap<>();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
 
-        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-        mediaMetadataRetriever.setDataSource(radioStation.getListenUrl(), metadata);
-        //mediaMetadataRetriever.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL, metadata);
+                HashMap<String, String> metadata = new HashMap<>();
 
-        bitRate = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
-        Log.d(LOG_TAG, "Bitrate: " + bitRate);
+                MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+                mediaMetadataRetriever.setDataSource(radioStation.getListenUrl(), metadata);
+                //mediaMetadataRetriever.setDataSource(RadioPlayerFragment.RADIO_LOCAL_URL, metadata);
 
-        sendAlert(RadioPlayerFragment.SEND_BITRATE, bitRate);
+                bitRate = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+                Log.d(LOG_TAG, "Bitrate: " + bitRate);
+
+                sendAlert(RadioPlayerFragment.SEND_BITRATE, bitRate);
+            }
+        });
 
     }
 

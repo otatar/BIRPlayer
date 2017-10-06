@@ -215,7 +215,7 @@
         "listen_type": 1,
         "station_genre": "zabavna, pop, urban, rock",
         "station_name": "Radio BIG",
-        "listen_url": "http://188.124.211.103:8100//big1"
+        "listen_url": "http://188.124.211.103:8100/big1"
       },
       {
         "station_location": "Sarajevo",
@@ -594,9 +594,73 @@
         "station_genre": "zabavna, narodna, folk",
         "station_name": "Radio Breza",
         "listen_url": "http://velebithosting.net:8040/"
+      },
+      {
+        "station_location": "Banja Luka",
+        "id": 68,
+        "station_url": "www.bigradiobl.com",
+        "listen_type": 1,
+        "station_genre": "zabavna, pop, urban, rock",
+        "station_name": "Radio BIG2",
+        "listen_url": "http://188.124.211.103:8100/big2"
+      },
+      {
+        "station_location": "Banja Luka",
+        "id": 69,
+        "station_url": "www.bigradiobl.com",
+        "listen_type": 1,
+        "station_genre": "zabavna, pop, urban, rock",
+        "station_name": "Radio BIG 3",
+        "listen_url": "http://188.124.211.103:8100/big3"
+      },
+      {
+        "station_location": "Milici",
+        "id": 70,
+        "station_url": "www.magic.ba",
+        "listen_type": 0,
+        "station_genre": "narodna, folk",
+        "station_name": "Radio Magic",
+        "listen_url": "http://91.191.19.198:8030/"
+      },
+      {
+        "station_location": "Kakanj",
+        "id": 71,
+        "station_url": "www.radiokakanj.co.ba/",
+        "listen_type": 0,
+        "station_genre": "narodna, zabavna, folk, pop, uraban",
+        "station_name": "Radio Kakanj",
+        "listen_url": "http://163.172.213.155:8067/"
+      },
+      {
+        "station_location": "Brčko",
+        "id": 72,
+        "station_url": "http://www.lipovac-brcko.com/",
+        "listen_type": 0,
+        "station_genre": "narodna, folk",
+        "station_name": "Radio Lipovac",
+        "listen_url": "philae.dihostnet.com:8129/"
+      },
+      {
+        "station_location": "Vareš",
+        "id": 73,
+        "station_url": "www.radiobobovac.com/",
+        "listen_type": 0,
+        "station_genre": "narodna, folk, etno",
+        "station_name": "Radio Bobovac",
+        "listen_url": "http://162.219.27.186:8006/"
+      },
+      {
+        "station_location": "Livno",
+        "id": 74,
+        "station_url": "www.radiotudion.com",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop",
+        "station_name": "Radio Studio N",
+        "listen_url": "http://163.172.213.155:8780/"
       }
 
+
     ],
-    "quantity": "67"
+    "quantity": "74"
   }
 }

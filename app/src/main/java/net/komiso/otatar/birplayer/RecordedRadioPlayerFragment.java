@@ -363,7 +363,7 @@ public class RecordedRadioPlayerFragment extends Fragment {
             public void onClick(View v) {
 
                 //Send stop RadioPlayerService
-                sendAction(ACTION_PAUSE_REC);
+                sendAction(ACTION_STOP);
 
                 //Change load next radio station
                 changeRecordedRadioStation(0);
