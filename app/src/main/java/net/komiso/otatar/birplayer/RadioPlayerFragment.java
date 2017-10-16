@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -201,7 +202,8 @@ public class RadioPlayerFragment extends Fragment {
                     }
 
                     //Activate the recording button
-                    if (Main2Activity.storagePerm) {
+                    int MyVersion = Build.VERSION.SDK_INT;
+                    if (Main2Activity.storagePerm || (MyVersion <= Build.VERSION_CODES.LOLLIPOP_MR1)) {
                         btnRecord.setEnabled(true);
                     }
 

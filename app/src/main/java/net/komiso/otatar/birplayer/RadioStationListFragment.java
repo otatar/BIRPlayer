@@ -17,7 +17,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
@@ -49,13 +48,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Map;
 
 import es.claucookie.miniequalizerlibrary.EqualizerView;
 
@@ -258,7 +255,6 @@ public class RadioStationListFragment extends Fragment {
                         containerActivity.onRadioStationSelectedAndPlay(radioStation, false);
                         radioStation.setConnecting(true);
 
-
                     } else {
 
                         Log.d(LOG_TAG, "Stop " + radioStation.getRadioStationName());
@@ -448,7 +444,8 @@ public class RadioStationListFragment extends Fragment {
         }
 
         //Setter for radioStationList
-        public void seRecordedRadioStationList(ArrayList<File> recordedRadioStationList) {
+        public void setRecordedRadioStationList(ArrayList<File> recordedRadioStationList) {
+            this.recordedRadioStationList.clear();
             this.recordedRadioStationList.addAll(recordedRadioStationList);
         }
 
@@ -566,8 +563,6 @@ public class RadioStationListFragment extends Fragment {
             //If we are in action mode, show check boxes
             if (actionMode != null) {
                 listCheckBox.setVisibility(View.VISIBLE);
-                //And check it it they are selected
-                Log.d(LOG_TAG, "Size: " + selectedRecordings.size());
                 if (selectedRecordings.contains(position)) {
                     listCheckBox.setOnCheckedChangeListener(null);
                     listCheckBox.setChecked(true);
@@ -993,7 +988,6 @@ public class RadioStationListFragment extends Fragment {
 
                 //Delete pressed recordings
                 int former_s = 0;
-                Log.d(LOG_TAG, "blb: " +  selectedRecordings);
                 for (Integer s : selectedRecordings) {
                     if (s >  former_s) {
                         s--;
@@ -1005,6 +999,7 @@ public class RadioStationListFragment extends Fragment {
                     former_s = s;
                 }
                 actionMode.finish();
+                recordedRadioStationAdapter.setRecordedRadioStationList(recordedRadioStationList);
                 recordedRadioStationAdapter.notifyDataSetChanged();
                 //Notify the user
                 Snackbar snackbar = Snackbar

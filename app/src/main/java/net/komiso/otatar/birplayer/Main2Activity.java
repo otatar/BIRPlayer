@@ -264,7 +264,6 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
                 storagePerm = true;
             }
 
-
         }
 
 
@@ -276,7 +275,6 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
         tabs = (TabLayout) findViewById(R.id.tabs);
         //Get references to views
         drawerLayout = (DrawerLayout) findViewById(R.id.navigation_drawer);
-        //drawerList = (ListView) findViewById(R.id.list_view);
         navigationView = (NavigationView) findViewById(R.id.nav_view);
 
         //From the top, create toolbar
@@ -464,19 +462,6 @@ public class Main2Activity extends AppCompatActivity implements RadioStationList
                 ft.add(R.id.frame_layout, fragment);
                 ft.commit();
 
-                /*//Check current fragment
-                try {
-                    currentFragment = (RadioStationListFragment) getSupportFragmentManager().findFragmentById(R.id.frame_layout);
-
-                } catch (ClassCastException e) {
-                    Log.d(LOG_TAG, "RadioStationList not loaded, load it!");
-                    changeTab();
-                    getSupportFragmentManager().executePendingTransactions();
-                    currentFragment = (RadioStationListFragment) getSupportFragmentManager().findFragmentByTag("visible_fragment");
-                }
-
-                Log.d(LOG_TAG, "Current filter: " + savedInstanceState.getInt(CURRENT_FILTER));
-                currentFragment.filterRadioStations(savedInstanceState.getInt(CURRENT_FILTER));*/
                 setActivitySubtitle(savedInstanceState.getString(CURRENT_TITLE));
             } else {
                 changeTab();

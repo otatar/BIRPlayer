@@ -854,7 +854,7 @@ public class RadioPlayerService extends Service {
 
                 sendAlert(RadioPlayerFragment.SEND_BITRATE, bitRate);
             }
-        });
+        }).start();
 
     }
 

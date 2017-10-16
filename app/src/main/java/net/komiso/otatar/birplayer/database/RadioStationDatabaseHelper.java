@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import net.komiso.otatar.birplayer.RadioStation;
 import net.komiso.otatar.birplayer.database.RadioStationDbSchema.RadioStationTable;
 import net.komiso.otatar.birplayer.database.RadioStationDbSchema.FavoriteTable;
 
@@ -22,7 +23,7 @@ import java.io.InputStream;
 public class RadioStationDatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "bir_player";
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
     private static final String LOCAL_JSON_FILE = "radio_stations_json.json";
 
     private Context context;
@@ -33,6 +34,7 @@ public class RadioStationDatabaseHelper extends SQLiteOpenHelper {
 
         this.context = context;
     }
+
 
     @Override
     public void onCreate(SQLiteDatabase db) {
@@ -49,6 +51,23 @@ public class RadioStationDatabaseHelper extends SQLiteOpenHelper {
                    RadioStationTable.Cols.FAVORITE + " INTEGER DEFAULT 0" + ")"
         );
 
+        // We need favorite table
+        db.execSQL("CREATE TABLE " + FavoriteTable.DB_TABLE_NAME + "(" +
+                "_id INTEGER primary key autoincrement, " +
+                FavoriteTable.Cols.ID_RADIO_STATION + " INTEGER, " +
+                FavoriteTable.Cols.FAVORITE + " INTEGER" + ")"
+        );
+
+        insertRadioStationIntoTable(db);
+
+    }
+
+
+    /**
+     * Inserts radio station object from JSON file into database
+     * @param db
+     */
+    private void insertRadioStationIntoTable(SQLiteDatabase db) {
         String jsonString = getLocalJsonFile(LOCAL_JSON_FILE);
 
         try {
@@ -79,18 +98,20 @@ public class RadioStationDatabaseHelper extends SQLiteOpenHelper {
             }
         } catch (JSONException e) {}
 
-        // We need favorite table
-        db.execSQL("CREATE TABLE " + FavoriteTable.DB_TABLE_NAME + "(" +
-                "_id INTEGER primary key autoincrement, " +
-                FavoriteTable.Cols.ID_RADIO_STATION + " INTEGER, " +
-                FavoriteTable.Cols.FAVORITE + " INTEGER" + ")"
-        );
-
     }
 
+
     @Override
+    /**
+     * Runs on upgrade, when we need to update table
+     */
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
+        //First delete data from table
+        db.execSQL("DELETE FROM " + RadioStationTable.DB_TABLE_NAME);
+
+        //Insert new data
+        insertRadioStationIntoTable(db);
     }
 
 

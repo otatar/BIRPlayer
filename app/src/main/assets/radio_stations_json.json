@@ -657,10 +657,37 @@
         "station_genre": "zabavna, pop",
         "station_name": "Radio Studio N",
         "listen_url": "http://163.172.213.155:8780/"
+      },
+      {
+        "station_location": "Vitez",
+        "id": 75,
+        "station_url": "www.radiovitez.ba",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, rock",
+        "station_name": "Radio Vitez",
+        "listen_url": "http://178.209.2.100:7020/"
+      },
+      {
+        "station_location": "Jajce",
+        "id": 76,
+        "station_url": "www.radiojajce.ba",
+        "listen_type": 0,
+        "station_genre": "zabavna, pop, rock",
+        "station_name": "Radio Jajce",
+        "listen_url": "http://144.76.172.23:7032"
+      },
+      {
+        "station_location": "Doboj",
+        "id": 77,
+        "station_url": "www.dzungla.net",
+        "listen_type": 0,
+        "station_genre": "narodna, zabavna, folk",
+        "station_name": "Radio Džungla 2",
+        "listen_url": "http://163.172.213.155:8054/"
       }
 
 
     ],
-    "quantity": "74"
+    "quantity": "77"
   }
 }
